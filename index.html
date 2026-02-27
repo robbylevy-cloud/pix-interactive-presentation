@@ -1,0 +1,2736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PIX — The Probability Index | 100s</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script crossorigin src="https://unpkg.com/recharts@2.15.0/umd/Recharts.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #08090c; color: #e8e8ec; font-family: 'DM Sans', sans-serif; }
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,200,83,0.2); border-radius: 4px; }
+  @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.35 } }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:translateY(0) } }
+  @keyframes glowPulse { 0%,100% { text-shadow:0 0 20px rgba(0,200,83,0.3) } 50% { text-shadow:0 0 40px rgba(0,200,83,0.6),0 0 80px rgba(0,200,83,0.2) } }
+  input[type=range] { height:4px; -webkit-appearance:none; background:rgba(255,255,255,0.1); border-radius:2px; outline:none; width:100%; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:16px; height:16px; border-radius:50%; background:#00C853; cursor:pointer; }
+  .px-card:hover { border-color: rgba(0,200,83,0.25) !important; }
+  .px-btn:hover { background: rgba(0,200,83,0.15) !important; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+
+// ============ REACT DESTRUCTURING ============
+const { useState, useMemo, useEffect, useRef } = React;
+const { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine, ScatterChart, Scatter, Cell, Legend, ComposedChart } = window.Recharts;
+
+// ============ LOGO (IMMUTABLE — DO NOT MODIFY) ============
+const LOGO_SRC =
+  "data:image/png;base64,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";
+
+// ============ THEME ============
+const T = {
+  bg: "#08090c",
+  surface: "#0e1015",
+  raised: "#13151c",
+  hover: "#181b24",
+  border: "rgba(255,255,255,0.06)",
+  borderA: "rgba(0,200,83,0.25)",
+  text: "#e8e8ec",
+  muted: "rgba(255,255,255,0.7)",
+  dim: "rgba(255,255,255,0.45)",
+  green: "#00C853",
+  greenD: "rgba(0,200,83,0.15)",
+  greenG: "rgba(0,200,83,0.08)",
+  red: "#FF4444",
+  amber: "#FFB300",
+  blue: "#448AFF",
+  font: "'DM Sans',sans-serif",
+  mono: "'JetBrains Mono',monospace",
+  display: "'Playfair Display',serif",
+  r: "10px",
+  rs: "6px",
+  rl: "14px",
+};
+
+// ============ CORE MATH ============
+const normalCDF = (x) => {
+  const a1 = 0.254829592,
+    a2 = -0.284496736,
+    a3 = 1.421413741,
+    a4 = -1.453152027,
+    a5 = 1.061405429,
+    p = 0.3275911;
+  const sign = x < 0 ? -1 : 1;
+  const ax = Math.abs(x) / Math.sqrt(2);
+  const t = 1 / (1 + p * ax);
+  const y =
+    1 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-ax * ax);
+  return 0.5 * (1 + sign * y);
+};
+
+// === REGIME-DEPENDENT VOL TERM STRUCTURE (EXTENDED TO 360D) ===
+const TS_CALM = {
+  1: 0.8, 3: 0.88, 7: 0.93, 14: 0.97, 30: 1.0, 60: 1.02, 90: 1.03, 180: 1.04, 360: 1.05,
+};
+const TS_NORMAL = {
+  1: 0.95, 3: 0.97, 7: 0.98, 14: 0.99, 30: 1.0, 60: 1.0, 90: 1.0, 180: 0.99, 360: 0.98,
+};
+const TS_ELEVATED = {
+  1: 1.15, 3: 1.1, 7: 1.07, 14: 1.03, 30: 1.0, 60: 0.95, 90: 0.92, 180: 0.88, 360: 0.85,
+};
+const TS_FEARFUL = {
+  1: 1.4, 3: 1.28, 7: 1.18, 14: 1.09, 30: 1.0, 60: 0.9, 90: 0.85, 180: 0.8, 360: 0.76,
+};
+const TS_CRISIS = {
+  1: 1.7, 3: 1.5, 7: 1.32, 14: 1.15, 30: 1.0, 60: 0.85, 90: 0.78, 180: 0.72, 360: 0.68,
+};
+
+const interpTenor = (table, days) => {
+  const tenors = Object.keys(table)
+    .map(Number)
+    .sort((a, b) => a - b);
+  if (days <= tenors[0]) return table[tenors[0]];
+  if (days >= tenors[tenors.length - 1])
+    return table[tenors[tenors.length - 1]];
+  for (let i = 0; i < tenors.length - 1; i++) {
+    if (tenors[i] <= days && days <= tenors[i + 1]) {
+      const w = (days - tenors[i]) / (tenors[i + 1] - tenors[i]);
+      return (1 - w) * table[tenors[i]] + w * table[tenors[i + 1]];
+    }
+  }
+  return 1.0;
+};
+
+const getTsFactor = (vix, days) => {
+  if (vix <= 10) return interpTenor(TS_CALM, days);
+  if (vix <= 13) {
+    const w = (vix - 10) / 3;
+    return (
+      (1 - w) * interpTenor(TS_CALM, days) + w * interpTenor(TS_NORMAL, days)
+    );
+  }
+  if (vix <= 19) return interpTenor(TS_NORMAL, days);
+  if (vix <= 25) {
+    const w = (vix - 19) / 6;
+    return (
+      (1 - w) * interpTenor(TS_NORMAL, days) +
+      w * interpTenor(TS_ELEVATED, days)
+    );
+  }
+  if (vix <= 35) {
+    const w = (vix - 25) / 10;
+    return (
+      (1 - w) * interpTenor(TS_ELEVATED, days) +
+      w * interpTenor(TS_FEARFUL, days)
+    );
+  }
+  if (vix <= 50) {
+    const w = (vix - 35) / 15;
+    return (
+      (1 - w) * interpTenor(TS_FEARFUL, days) + w * interpTenor(TS_CRISIS, days)
+    );
+  }
+  return interpTenor(TS_CRISIS, days);
+};
+
+// UP skew: calibrated against 14,844 days of ORATS SPX IV data (Brier score minimized)
+// Quintic blend below 3% forces ratio -> 1.0 at ATM
+const getSkewUP = (barrier_pct) => {
+  const raw = 2.3393 - 1.5477 * (1 - Math.exp(-0.9017 * barrier_pct));
+  if (barrier_pct >= 3) return raw;
+  const w = Math.pow(barrier_pct / 3, 5);
+  return 1.0 * (1 - w) + raw * w;
+};
+
+const getSkewRatio = (vix, barrier_pct, dir = "DOWN") => {
+  if (dir === "DOWN" || dir === "DN") {
+    let base = 0.7 + 0.036 * barrier_pct;
+    // Floor: DN must exceed UP by put/call spread (puts always >= calls at equal moneyness)
+    const upSkew = getSkewUP(barrier_pct);
+    const putCallFactor = 1.0 + 0.015 * barrier_pct;
+    const floor = upSkew * putCallFactor;
+    base = Math.max(base, floor);
+    if (vix <= 20) return base;
+    const compression =
+      vix <= 35
+        ? 1.0 - (vix - 20) * 0.005
+        : vix <= 60
+        ? 0.925 - (vix - 35) * 0.004
+        : 0.825;
+    return 1.0 + (base - 1.0) * compression;
+  }
+  // UP branch
+  return getSkewUP(barrier_pct);
+};
+
+const getTenorDamp = (days) => {
+  const tenors = [1, 3, 7, 14, 30, 60, 90, 180, 360];
+  const vals = [0.8, 0.85, 0.96, 0.92, 1.0, 1.0, 1.0, 1.0, 1.0];
+  if (days <= 1) return 0.8;
+  if (days >= 360) return 1.0;
+  for (let i = 0; i < tenors.length - 1; i++) {
+    if (days >= tenors[i] && days <= tenors[i + 1]) {
+      const w = (days - tenors[i]) / (tenors[i + 1] - tenors[i]);
+      return vals[i] * (1 - w) + vals[i + 1] * w;
+    }
+  }
+  return 1.0;
+};
+
+const getStripVol = (iv_pct, barrier_pct, days, dir = "DOWN") => {
+  const atm_iv = iv_pct / 100;
+  const tsFactor = getTsFactor(iv_pct, days);
+  const tenor_iv = atm_iv * tsFactor;
+  const skewRatio = getSkewRatio(iv_pct, barrier_pct, dir);
+  const damp = getTenorDamp(days);
+  return tenor_iv * skewRatio * damp;
+};
+
+const VRP_MONEYNESS = {
+  DOWN: { 2: 0.95, 3: 0.94, 5: 0.92, 7: 0.9, 10: 0.88, 15: 0.85, 20: 0.83 },
+  UP: { 2: 1.02, 3: 1.015, 5: 0.995, 7: 0.95, 10: 0.94, 15: 0.88, 20: 0.8 },
+};
+
+const interpTable = (table, key) => {
+  const keys = Object.keys(table)
+    .map(Number)
+    .sort((a, b) => a - b);
+  if (key <= keys[0]) return table[keys[0]];
+  if (key >= keys[keys.length - 1]) return table[keys[keys.length - 1]];
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (key >= keys[i] && key <= keys[i + 1]) {
+      const w = (key - keys[i]) / (keys[i + 1] - keys[i]);
+      return (1 - w) * table[keys[i]] + w * table[keys[i + 1]];
+    }
+  }
+  return 0.9;
+};
+
+const getVRPScalar = (days, dir = "DOWN", barrier_pct = 10) => {
+  return interpTable(VRP_MONEYNESS[dir] || VRP_MONEYNESS.DOWN, barrier_pct);
+};
+
+const firstPassageProb = (sigma, barrier_pct, days, dir = "DOWN", r = 0.04) => {
+  const Ty = days / 365;
+  if (Ty <= 0 || sigma <= 0.005) return 0;
+  const sqrtT = Math.sqrt(Ty);
+  const mu = r - 0.5 * sigma * sigma;
+  let h, d1, d2;
+  if (dir === "DOWN") {
+    h = Math.log(1 - barrier_pct / 100);
+    d1 = (h - mu * Ty) / (sigma * sqrtT);
+    d2 = (h + mu * Ty) / (sigma * sqrtT);
+  } else {
+    h = Math.log(1 + barrier_pct / 100);
+    d1 = (mu * Ty - h) / (sigma * sqrtT);
+    d2 = (-mu * Ty - h) / (sigma * sqrtT);
+  }
+  const exponent = Math.max(
+    -500,
+    Math.min(500, (2 * mu * h) / (sigma * sigma))
+  );
+  const prob = normalCDF(d1) + Math.exp(exponent) * normalCDF(d2);
+  return Math.min(99.9, Math.max(0.1, prob * 100));
+};
+
+const pixCash = (iv_pct, barrier_pct, days, dir = "DOWN", r = 0.04) => {
+  const stripVol = getStripVol(iv_pct, barrier_pct, days, dir);
+  return firstPassageProb(stripVol, barrier_pct, days, dir, r);
+};
+
+const pixFairValue = (iv_pct, barrier_pct, days, dir = "DOWN", r = 0.04) => {
+  const stripVol = getStripVol(iv_pct, barrier_pct, days, dir);
+  const vrpScalar = getVRPScalar(days, dir, barrier_pct);
+  return firstPassageProb(stripVol * vrpScalar, barrier_pct, days, dir, r);
+};
+
+const pixVRPSpread = (iv_pct, barrier_pct, days, dir = "DOWN") => {
+  return (
+    pixCash(iv_pct, barrier_pct, days, dir) -
+    pixFairValue(iv_pct, barrier_pct, days, dir)
+  );
+};
+
+const pixCalc = pixCash;
+
+// ============ PIX-PERP MATH UTILITIES ============
+
+// Funding rate for a PIX-PERP at a given product configuration
+const computeFundingRate = (vol, barrier, tenor, dir = "DOWN", demPremPct = 3) => {
+  const cash = pixCash(vol, barrier, tenor, dir);
+  const fv = pixFairValue(vol, barrier, tenor, dir);
+  const vrpSpread = cash - fv;
+  const demandPremium = cash * (demPremPct / 100);
+  const perp = cash + demandPremium;
+  const totalBasis = perp - fv;
+  const periodsInTenor = Math.floor(tenor * 3); // 3 settlements/day at 8h intervals
+  const per8h = periodsInTenor > 0 ? totalBasis / periodsInTenor : 0;
+  const perDay = tenor > 0 ? totalBasis / tenor : 0;
+  const perHour = perDay / 24;
+  const apr = Math.abs(perp) >= 0.1 ? Math.min(9999, (perDay / perp) * 365 * 100) : 0;
+  return {
+    cash, fv, perp, vrpSpread, demandPremium, totalBasis,
+    per8h, perDay, perHour, overTenor: totalBasis, apr,
+    maxLossLong: perp, maxLossShort: 100 - perp,
+  };
+};
+
+// Calibrated VIX shock multipliers (at VIX 18 base, scales proportionally)
+const SHOCK_VIX_MULT = { "-10": 2.5556, "-5": 1.7778, "-3": 1.3333, "-1": 1.1111, "3": 0.9333, "5": 0.9000 };
+const shockVIX = (vix, move) => {
+  const key = String(move);
+  if (SHOCK_VIX_MULT[key]) return Math.max(8, vix * SHOCK_VIX_MULT[key]);
+  // Interpolate for non-preset values
+  const pts = Object.keys(SHOCK_VIX_MULT).map(Number).sort((a, b) => a - b);
+  if (move <= pts[0]) return Math.max(8, vix * SHOCK_VIX_MULT[String(pts[0])]);
+  if (move >= pts[pts.length - 1]) return Math.max(8, vix * SHOCK_VIX_MULT[String(pts[pts.length - 1])]);
+  for (let i = 0; i < pts.length - 1; i++) {
+    if (move >= pts[i] && move <= pts[i + 1]) {
+      const t = (move - pts[i]) / (pts[i + 1] - pts[i]);
+      const m = SHOCK_VIX_MULT[String(pts[i])] * (1 - t) + SHOCK_VIX_MULT[String(pts[i + 1])] * t;
+      return Math.max(8, vix * m);
+    }
+  }
+  return vix;
+};
+
+// Shock response: what happens to a PIX-PERP under a hypothetical market shock
+const computeShockResponse = (vol, barrier, tenor, dir, shockPct, shockDays = 1, demPremPct = 3) => {
+  const newVol = Math.max(8, shockVIX(vol, shockPct));
+  // Compute old values
+  const oldCash = pixCash(vol, barrier, tenor, dir);
+  const oldFv = pixFairValue(vol, barrier, tenor, dir);
+  const oldDemPrem = oldCash * (demPremPct / 100);
+  const oldPerp = oldCash + oldDemPrem;
+  // Recompute at SAME barrier and tenor (PIX is rolling continuous)
+  const newCash = pixCash(newVol, barrier, tenor, dir);
+  const newFv = pixFairValue(newVol, barrier, tenor, dir);
+  const newDemPrem = newCash * (demPremPct / 100);
+  const newPerp = newCash + newDemPrem;
+  const newTotalBasis = newPerp - newFv;
+  const newFundingPerDay = tenor > 0 ? newTotalBasis / tenor : 0;
+  const newApr = Math.abs(newPerp) >= 0.1 ? Math.min(9999, (newFundingPerDay / newPerp) * 365 * 100) : 0;
+  return {
+    newVol, newCash, newFv, newPerp,
+    pnlLong: newPerp - oldPerp,
+    pnlShort: oldPerp - newPerp,
+    newFundingPerDay, newApr,
+    oldCash, oldFv, oldPerp,
+  };
+};
+
+// Days of carry to recover from shock. Lower = better risk/reward for short VRP.
+const computeCarryShockRatio = (fundingPerDay, shockPnl) => {
+  return fundingPerDay > 0.001 ? Math.abs(shockPnl) / fundingPerDay : 9999;
+};
+
+// ============ CONSTANTS & HELPERS ============
+const TENORS = [1, 3, 7, 14, 30, 60, 90, 180, 360];
+const BARRIERS_DN = [1, 2, 3, 5, 7, 10, 15, 20];
+
+// Event vol injection
+const evtEffVol = (tenor, eventDay, baseVol, eventVol) => {
+  if (tenor < eventDay) return baseVol;
+  const bv = (baseVol / 100) ** 2,
+    ev = (eventVol / 100) ** 2;
+  return Math.sqrt(((tenor - 1) * bv + ev) / tenor) * 100;
+};
+
+const PERP_DEFAULT_PRODUCTS = [
+  { barrier: 3, tenor: 7, dir: "DOWN", label: "7D-DN3%", archetype: "Hair trigger" },
+  { barrier: 5, tenor: 30, dir: "DOWN", label: "30D-DN5%", archetype: "Sweet spot" },
+  { barrier: 10, tenor: 30, dir: "DOWN", label: "30D-DN10%", archetype: "Deep crash" },
+  { barrier: 10, tenor: 90, dir: "DOWN", label: "90D-DN10%", archetype: "Long-term tail" },
+];
+
+const PERP_ALL_PRODUCTS = [
+  { barrier: 3, tenor: 7, dir: "DOWN", label: "7D-DN3%", archetype: "Hair trigger" },
+  { barrier: 5, tenor: 14, dir: "DOWN", label: "14D-DN5%", archetype: "Swing trader" },
+  { barrier: 5, tenor: 30, dir: "DOWN", label: "30D-DN5%", archetype: "Sweet spot" },
+  { barrier: 7, tenor: 30, dir: "DOWN", label: "30D-DN7%", archetype: "Mid-depth" },
+  { barrier: 10, tenor: 30, dir: "DOWN", label: "30D-DN10%", archetype: "Deep crash" },
+  { barrier: 10, tenor: 90, dir: "DOWN", label: "90D-DN10%", archetype: "Long-term tail" },
+  { barrier: 15, tenor: 90, dir: "DOWN", label: "90D-DN15%", archetype: "Black swan" },
+  { barrier: 5, tenor: 30, dir: "UP", label: "30D-UP5%", archetype: "Upside outlier" },
+];
+
+const f = (v, d = 1) => Number(v).toFixed(d);
+
+const SHORT_ARCHETYPES = {
+  "Hair trigger": "Scalper's yield", "Sweet spot": "Core carry", "Deep crash": "Tail premium",
+  "Long-term tail": "Steady harvest", "Swing trader": "Active carry", "Mid-depth": "Balanced yield",
+  "Black swan": "Deep tail seller", "Upside outlier": "Call premium",
+};
+
+// ============ SHARED UI COMPONENTS ============
+const Card = ({ children, style = {} }) => (
+  <div className="px-card" style={{
+    background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.rl,
+    padding: "20px", animation: "fadeIn 0.4s ease", ...style,
+  }}>{children}</div>
+);
+
+const Label = ({ children, color }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+    <span style={{
+      fontSize: "11px", fontWeight: 700, color: T.dim,
+      letterSpacing: "1.2px", fontFamily: T.mono,
+    }}>{children}</span>
+  </div>
+);
+
+const Stat = ({ label, value, color = T.text, sub }) => (
+  <div>
+    <div style={{ fontSize: "10px", color: T.dim, fontFamily: T.mono, letterSpacing: "0.5px", marginBottom: "4px" }}>{label}</div>
+    <div style={{ fontSize: "18px", fontWeight: 700, color, fontFamily: T.mono }}>{value}</div>
+    {sub && <div style={{ fontSize: "9px", color: T.dim, marginTop: "2px" }}>{sub}</div>}
+  </div>
+);
+
+const Pill = ({ active, onClick, children, color }) => {
+  const c = color || T.green;
+  const bg = color ? `${color}20` : T.greenD;
+  return (
+    <button className="px-btn" onClick={onClick} style={{
+      background: active ? bg : "transparent",
+      border: `1px solid ${active ? c : T.border}`,
+      borderRadius: "6px", padding: "6px 14px",
+      color: active ? c : T.muted, fontSize: "12px", fontWeight: 600,
+      fontFamily: T.mono, cursor: "pointer", transition: "all 0.2s",
+    }}>{children}</button>
+  );
+};
+
+const LiveDot = () => (
+  <span style={{
+    display: "inline-block", width: "6px", height: "6px", borderRadius: "50%",
+    background: T.green, animation: "pulse 2s ease infinite", marginRight: "6px",
+  }} />
+);
+
+const SliderControl = ({ label, value, min, max, step, onChange, color, formatVal }) => (
+  <div style={{ flex: 1, minWidth: "140px" }}>
+    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+      <span style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.dim }}>{label}</span>
+      <span style={{ fontSize: "12px", fontFamily: T.mono, fontWeight: 700, color: color || T.green }}>
+        {formatVal ? formatVal(value) : value}
+      </span>
+    </div>
+    <input type="range" min={min} max={max} step={step || 1} value={value}
+      onChange={e => onChange(+e.target.value)} style={{ width: "100%", accentColor: color || T.green }} />
+  </div>
+);
+
+// ============ ANIMATED NUMBER HOOK ============
+const useAnimatedNumber = (target, duration = 800, delay = 0) => {
+  const [value, setValue] = useState(0);
+  const prevRef = useRef(0);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const from = prevRef.current;
+      const diff = target - from;
+      if (Math.abs(diff) < 0.05) { setValue(target); prevRef.current = target; return; }
+      let frame = 0;
+      const frames = Math.round(duration / 16);
+      const id = setInterval(() => {
+        frame++;
+        if (frame >= frames) {
+          setValue(target);
+          prevRef.current = target;
+          clearInterval(id);
+        } else {
+          const t = frame / frames;
+          const eased = 1 - Math.pow(1 - t, 3);
+          setValue(+(from + diff * eased).toFixed(1));
+        }
+      }, 16);
+      return () => clearInterval(id);
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [target, duration, delay]);
+  return value;
+};
+
+// ============ CRISIS STAGES DATA ============
+const fmt1 = (v) => Number(v).toFixed(1);
+const CRISIS_STAGES = [
+  {
+    label: "CALM", spx: 6900, vix: 18.0,
+    pix: +pixCash(18.0, 10, 30).toFixed(1),
+    spxLabel: "6,900",
+    desc: "chance of another 10% down from right here",
+    mood: "Background noise. Markets are calm.",
+    color: T.green,
+  },
+  {
+    label: "CORRECTION", spx: 6165, vix: 35.0,
+    pix: +pixCash(35, 10, 30).toFixed(1),
+    spxLabel: "6,165",
+    desc: "chance of another 10% down from right here",
+    mood: "Already down 10% \u2014 and PIX says there's a 1-in-3 chance it drops another 10% from here within 30 days.",
+    color: T.amber,
+  },
+  {
+    label: "CRISIS", spx: 5500, vix: 52.0,
+    pix: 55,
+    spxLabel: "5,500",
+    desc: "chance of another 10% down from right here",
+    mood: "More likely than not, another 10% down from here. That's 2008. That's COVID. In one number.",
+    color: T.red,
+  },
+];
+
+// Crisis reference points for probability bar
+const CRISIS_REFS = [
+  { label: "GFC Peak", pix: 64.1, color: T.red },
+  { label: "COVID Peak", pix: 70.3, color: T.red },
+  { label: "Volmageddon", pix: 35.9, color: T.amber },
+  { label: "Tariff Shock", pix: 53.3, color: T.amber },
+];
+
+// ============================================================================
+// PANEL 1: PIX EXPLAINER (THE AHA MOMENT)
+// ============================================================================
+const Panel1Explainer = () => {
+  const [vix, setVix] = useState(18);
+  const [dir, setDir] = useState("DOWN");
+  const [barrier, setBarrier] = useState(10);
+  const barriers = [3, 5, 7, 10, 15];
+
+  const pixVal = useMemo(() => pixCash(vix, barrier, 30, dir), [vix, barrier, dir]);
+  const fvVal = useMemo(() => pixFairValue(vix, barrier, 30, dir), [vix, barrier, dir]);
+  const vrp = useMemo(() => pixVRPSpread(vix, barrier, 30, dir), [vix, barrier, dir]);
+
+  // Animated PIX number
+  const animPix = useAnimatedNumber(pixVal, 600);
+
+  // Color based on level
+  const pixColor = animPix <= 12 ? T.green : animPix <= 44 ? T.amber : T.red;
+
+  // Crisis narrative state
+  const [crisisStage, setCrisisStage] = useState(0);
+  const [crisisAnimPix, setCrisisAnimPix] = useState(CRISIS_STAGES[0].pix);
+  const [crisisAnimColor, setCrisisAnimColor] = useState(CRISIS_STAGES[0].color);
+  const [glowing, setGlowing] = useState(false);
+  const prevCrisisRef = useRef(CRISIS_STAGES[0].pix);
+  const cs = CRISIS_STAGES[crisisStage];
+
+  useEffect(() => {
+    const from = prevCrisisRef.current;
+    const to = cs.pix;
+    const diff = to - from;
+    if (Math.abs(diff) < 0.05) {
+      setCrisisAnimColor(cs.color);
+      prevCrisisRef.current = to;
+      return;
+    }
+    setGlowing(true);
+    let frame = 0;
+    const dur = 40;
+    const id = setInterval(() => {
+      frame++;
+      if (frame >= dur) {
+        setCrisisAnimPix(to);
+        setCrisisAnimColor(cs.color);
+        setGlowing(false);
+        prevCrisisRef.current = to;
+        clearInterval(id);
+      } else {
+        const t = frame / dur;
+        const eased = 1 - Math.pow(1 - t, 3);
+        const v = from + diff * eased;
+        setCrisisAnimPix(+v.toFixed(1));
+        if (v <= 12) setCrisisAnimColor(T.green);
+        else if (v <= 44) setCrisisAnimColor(T.amber);
+        else setCrisisAnimColor(T.red);
+      }
+    }, 20);
+    return () => clearInterval(id);
+  }, [crisisStage]);
+
+  return (
+    <div style={{ animation: "fadeIn 0.5s ease" }}>
+      {/* Section Header */}
+      <div style={{ textAlign: "center", marginBottom: "32px" }}>
+        <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "2.5px", color: T.green, marginBottom: "8px" }}>
+          THE PROBABILITY INDEX
+        </div>
+        <div style={{ fontFamily: T.display, fontSize: "32px", fontWeight: 800, marginBottom: "10px", lineHeight: 1.2 }}>
+          What is PIX?
+        </div>
+        <div style={{ fontSize: "15px", color: T.muted, maxWidth: "700px", margin: "0 auto", lineHeight: 1.7 }}>
+          PIX reads the same vol surface your market makers price every day and outputs probability.
+          One number. No translation needed.
+        </div>
+      </div>
+
+      {/* Main Interactive: VIX -> PIX */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>PIX CALCULATOR</Label>
+
+        {/* Controls Row */}
+        <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap", alignItems: "flex-end" }}>
+          <SliderControl label="VIX" value={vix} min={10} max={80} step={0.5} onChange={setVix} />
+          <div style={{ display: "flex", gap: "4px" }}>
+            <Pill active={dir === "DOWN"} onClick={() => setDir("DOWN")} color={T.red}>DN</Pill>
+            <Pill active={dir === "UP"} onClick={() => setDir("UP")} color={T.green}>UP</Pill>
+          </div>
+          <div style={{ display: "flex", gap: "4px" }}>
+            {barriers.map(b => (
+              <Pill key={b} active={barrier === b} onClick={() => setBarrier(b)}>{b}%</Pill>
+            ))}
+          </div>
+        </div>
+
+        {/* Big PIX Number Display */}
+        <div style={{
+          padding: "32px", textAlign: "center",
+          background: `linear-gradient(135deg, ${pixColor}08, ${pixColor}03)`,
+          border: `1px solid ${pixColor}40`, borderRadius: T.rl,
+          marginBottom: "20px",
+        }}>
+          <div style={{ fontSize: "11px", fontFamily: T.mono, letterSpacing: "2px", color: T.dim, marginBottom: "8px" }}>
+            PIX-SPX-30D-{dir === "DOWN" ? "DN" : "UP"}{barrier}%
+          </div>
+          <div style={{
+            fontSize: "80px", fontWeight: 800, fontFamily: T.mono, color: pixColor, lineHeight: 1,
+            animation: "glowPulse 3s ease infinite",
+          }}>
+            {f(animPix, 2)}
+          </div>
+          <div style={{ fontSize: "16px", color: T.text, marginTop: "16px", lineHeight: 1.6, maxWidth: "640px", margin: "16px auto 0" }}>
+            The market implies a{" "}
+            <span style={{ fontFamily: T.mono, fontWeight: 700, color: pixColor }}>{f(animPix, 2)}%</span>{" "}
+            probability that the S&P 500 will touch a level {barrier}% {dir === "DOWN" ? "below" : "above"}{" "}
+            its current price at some point during the next 30 days.
+          </div>
+        </div>
+
+        {/* Probability Bar 0-100 with crisis reference points */}
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px" }}>
+            <span style={{ fontSize: "9px", fontFamily: T.mono, color: T.dim }}>0%</span>
+            <span style={{ fontSize: "9px", fontFamily: T.mono, color: T.dim }}>PROBABILITY SCALE</span>
+            <span style={{ fontSize: "9px", fontFamily: T.mono, color: T.dim }}>100%</span>
+          </div>
+          <div style={{
+            position: "relative", height: "32px", background: "rgba(255,255,255,0.04)",
+            borderRadius: "6px", overflow: "visible",
+          }}>
+            {/* Fill bar */}
+            <div style={{
+              position: "absolute", left: 0, top: 0, bottom: 0,
+              width: `${Math.min(100, animPix)}%`,
+              background: `linear-gradient(90deg, ${pixColor}60, ${pixColor}30)`,
+              borderRadius: "6px", transition: "width 0.3s ease",
+            }} />
+            {/* Current PIX marker */}
+            <div style={{
+              position: "absolute", left: `${Math.min(98, animPix)}%`, top: "-4px", bottom: "-4px",
+              width: "3px", background: pixColor, borderRadius: "2px",
+              boxShadow: `0 0 8px ${pixColor}80`, transition: "left 0.3s ease",
+            }} />
+            {/* Crisis reference markers */}
+            {CRISIS_REFS.map((cr, i) => (
+              <div key={i} style={{
+                position: "absolute", left: `${cr.pix}%`, top: 0, bottom: 0,
+                width: "1px", background: `${cr.color}40`,
+              }}>
+                <div style={{
+                  position: "absolute", bottom: "-18px", left: "50%", transform: "translateX(-50%)",
+                  fontSize: "7px", fontFamily: T.mono, color: `${cr.color}90`, whiteSpace: "nowrap",
+                }}>
+                  {cr.label} {cr.pix}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Stats Row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginTop: "28px" }}>
+          <Stat label="PIX CASH" value={f(pixVal, 2)} color={pixColor} sub="Market-implied" />
+          <Stat label="PIX FAIR VALUE" value={f(fvVal, 2)} color={T.amber} sub="VRP-corrected" />
+          <Stat label="VRP SPREAD" value={`${f(vrp, 2)} pts`} color={vrp > 0 ? T.green : T.red} sub="Cash minus FV" />
+          <Stat label="STRIP VOL" value={`${f(getStripVol(vix, barrier, 30, dir) * 100, 1)}%`} color={T.blue} sub="Effective vol" />
+        </div>
+      </Card>
+
+      {/* "Another 10% from right here" Crisis Narrative */}
+      <Card>
+        <Label>PIX IN PLAIN LANGUAGE {"\u2014"} "ANOTHER 10% FROM RIGHT HERE"</Label>
+        <div style={{ fontSize: "15px", color: T.muted, lineHeight: 1.7, marginBottom: "6px", maxWidth: "820px" }}>
+          VIX 35 requires translation:{" "}
+          <span style={{ color: T.dim, fontStyle: "italic" }}>
+            "annualized vol of 35%, meaning ~2.2% daily moves..."
+          </span>
+          <br />
+          PIX requires none. It IS the translation, already done.
+        </div>
+        <div style={{ fontSize: "14px", color: T.text, lineHeight: 1.6, marginBottom: "18px", maxWidth: "820px" }}>
+          Because PIX uses{" "}
+          <strong style={{ color: T.green }}>constant maturity from current price</strong>,
+          it always measures "another X% from wherever you are <em>right now</em>." Click through a crisis:
+        </div>
+
+        {/* Stage selector buttons */}
+        <div style={{ display: "flex", gap: "8px", marginBottom: "20px" }}>
+          {CRISIS_STAGES.map((st, i) => (
+            <button key={i} onClick={() => setCrisisStage(i)} className="px-btn" style={{
+              flex: "1 1 0", padding: "12px 16px",
+              background: i === crisisStage ? `${st.color}12` : T.raised,
+              border: `1px solid ${i === crisisStage ? st.color : T.border}`,
+              borderRadius: T.rs, cursor: "pointer", textAlign: "left", transition: "all 0.25s",
+            }}>
+              <div style={{
+                fontSize: "11px", fontFamily: T.mono, letterSpacing: "1.5px",
+                color: i === crisisStage ? st.color : T.dim, marginBottom: "4px", fontWeight: 700,
+              }}>{st.label}</div>
+              <div style={{
+                fontSize: "18px", fontWeight: 800, fontFamily: T.mono,
+                color: i === crisisStage ? T.text : T.dim,
+              }}>SPX {st.spxLabel}</div>
+              <div style={{ fontSize: "12px", color: T.dim, fontFamily: T.mono, marginTop: "2px" }}>
+                VIX {st.vix}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Main narrative display */}
+        <div style={{ display: "flex", gap: "24px", alignItems: "stretch", flexWrap: "wrap" }}>
+          {/* Left: PIX reading */}
+          <div style={{ flex: "1 1 340px", display: "flex", flexDirection: "column", gap: "16px" }}>
+            {/* Big animated number */}
+            <div style={{
+              padding: "24px",
+              background: `linear-gradient(135deg, ${crisisAnimColor}08, ${crisisAnimColor}03)`,
+              border: `1px solid ${crisisAnimColor}40`, borderRadius: T.rl,
+              textAlign: "center", transition: "border-color 0.3s ease",
+            }}>
+              <div style={{ fontSize: "12px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.dim, marginBottom: "8px" }}>
+                PIX-DN10-30D
+              </div>
+              <div style={{
+                fontSize: "72px", fontWeight: 800, fontFamily: T.mono, color: crisisAnimColor, lineHeight: 1,
+                textShadow: glowing ? `0 0 40px ${crisisAnimColor}50, 0 0 80px ${crisisAnimColor}20` : "none",
+                transition: "text-shadow 0.2s ease",
+              }}>
+                {fmt1(crisisAnimPix)}
+              </div>
+              <div style={{ fontSize: "17px", color: T.text, marginTop: "12px", lineHeight: 1.5 }}>
+                <span style={{ fontFamily: T.mono, fontWeight: 700, color: crisisAnimColor }}>
+                  {fmt1(crisisAnimPix)}%
+                </span>{" "}
+                {cs.desc}
+              </div>
+            </div>
+
+            {/* Mood box */}
+            <div key={`mood-${crisisStage}`} style={{
+              padding: "16px", background: `${cs.color}08`,
+              borderLeft: `3px solid ${cs.color}`, borderRadius: "0 8px 8px 0",
+              animation: "fadeIn 0.5s ease",
+            }}>
+              <div style={{
+                fontSize: "15px", color: T.text, lineHeight: 1.7,
+                fontWeight: crisisStage === 2 ? 600 : 400,
+              }}>{cs.mood}</div>
+            </div>
+          </div>
+
+          {/* Right: SPX drawdown + PIX bars */}
+          <div key={`right-${crisisStage}`} style={{
+            flex: "1 1 340px", display: "flex", flexDirection: "column", gap: "12px",
+            animation: "fadeIn 0.3s ease",
+          }}>
+            {/* SPX drawdown bar */}
+            <div style={{ padding: "16px", background: T.raised, borderRadius: T.rs, border: `1px solid ${T.border}` }}>
+              <div style={{
+                fontSize: "11px", fontFamily: T.mono, letterSpacing: "1.5px",
+                color: T.dim, marginBottom: "10px", fontWeight: 600,
+              }}>SPX DRAWDOWN FROM 6,850</div>
+              <div style={{ position: "relative", height: "28px", background: "rgba(255,255,255,0.04)", borderRadius: "4px", overflow: "hidden" }}>
+                <div style={{
+                  position: "absolute", left: 0, top: 0, bottom: 0,
+                  width: `${((6850 - cs.spx) / 6850) * 100 * 3.5}%`,
+                  background: `linear-gradient(90deg, ${cs.color}40, ${cs.color}20)`,
+                  borderRadius: "4px", transition: "width 0.5s ease",
+                }} />
+                <div style={{
+                  position: "absolute", left: "8px", top: "50%", transform: "translateY(-50%)",
+                  fontSize: "14px", fontFamily: T.mono, fontWeight: 700, color: T.text, zIndex: 1,
+                }}>
+                  {cs.spx === 6850 ? "\u2014" : `\u2212${(((6850 - cs.spx) / 6850) * 100).toFixed(0)}%`}
+                </div>
+              </div>
+            </div>
+
+            {/* PIX reads through crisis */}
+            <div style={{ padding: "16px", background: T.raised, borderRadius: T.rs, border: `1px solid ${T.border}` }}>
+              <div style={{
+                fontSize: "11px", fontFamily: T.mono, letterSpacing: "1.5px",
+                color: T.dim, marginBottom: "10px", fontWeight: 600,
+              }}>PIX READS THROUGH THE CRISIS</div>
+              {CRISIS_STAGES.map((st, i) => {
+                const active = i === crisisStage;
+                const w = (st.pix / 70) * 100;
+                return (
+                  <div key={i} style={{ marginBottom: i < 2 ? "8px" : 0, opacity: i <= crisisStage ? 1 : 0.3, transition: "opacity 0.3s" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "3px" }}>
+                      <span style={{ fontSize: "12px", fontFamily: T.mono, color: active ? st.color : T.dim }}>
+                        SPX {st.spxLabel}
+                      </span>
+                      <span style={{ fontSize: "12px", fontFamily: T.mono, fontWeight: 700, color: active ? st.color : T.muted }}>
+                        PIX {fmt1(st.pix)}
+                      </span>
+                    </div>
+                    <div style={{ position: "relative", height: "18px", background: "rgba(255,255,255,0.04)", borderRadius: "3px", overflow: "hidden" }}>
+                      <div style={{
+                        position: "absolute", left: 0, top: 0, bottom: 0,
+                        width: `${w}%`, background: active ? st.color : `${st.color}60`,
+                        borderRadius: "3px", transition: "width 0.5s ease",
+                      }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* VIX vs PIX comparison */}
+            <div style={{ padding: "14px 16px", background: T.raised, borderRadius: T.rs, border: `1px solid ${T.border}` }}>
+              <div style={{
+                fontSize: "11px", fontFamily: T.mono, letterSpacing: "1px",
+                color: T.dim, marginBottom: "8px", fontWeight: 600,
+              }}>VIX vs PIX {"\u2014"} WHICH ONE DO YOU UNDERSTAND FASTER?</div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div style={{ padding: "10px 12px", background: "rgba(255,255,255,0.03)", borderRadius: T.rs }}>
+                  <div style={{ fontSize: "11px", color: T.dim, fontFamily: T.mono }}>VIX</div>
+                  <div style={{ fontSize: "24px", fontWeight: 700, fontFamily: T.mono, color: T.muted }}>{cs.vix}</div>
+                  <div style={{ fontSize: "11px", color: T.dim, marginTop: "2px" }}>
+                    "Expected annualized volatility of {cs.vix}%..."
+                  </div>
+                </div>
+                <div style={{ padding: "10px 12px", background: `${cs.color}08`, borderRadius: T.rs, border: `1px solid ${cs.color}25` }}>
+                  <div style={{ fontSize: "11px", color: cs.color, fontFamily: T.mono }}>PIX-DN10-30D</div>
+                  <div style={{ fontSize: "24px", fontWeight: 700, fontFamily: T.mono, color: cs.color }}>{fmt1(cs.pix)}</div>
+                  <div style={{ fontSize: "11px", color: T.text, marginTop: "2px" }}>
+                    "{fmt1(cs.pix)}% chance of a 10% market drop"
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+// ============================================================================
+// PANEL 2: PROTECTION MENU
+// ============================================================================
+const Panel2ProtectionMenu = () => {
+  const [vol, setVol] = useState(18);
+  const [showAll, setShowAll] = useState(false);
+  const [demPremPct, setDemPremPct] = useState(0);
+
+  const products = showAll ? PERP_ALL_PRODUCTS : PERP_DEFAULT_PRODUCTS;
+
+  const data = useMemo(() => {
+    return products.map(p => {
+      const fr = computeFundingRate(vol, p.barrier, p.tenor, p.dir, demPremPct);
+      const shock3 = computeShockResponse(vol, p.barrier, p.tenor, p.dir, -3, 1, demPremPct);
+      const shock5 = computeShockResponse(vol, p.barrier, p.tenor, p.dir, -5, 1, demPremPct);
+      const carryShock = computeCarryShockRatio(fr.perDay, shock5.pnlShort);
+      return { ...p, ...fr, shock3PnlLong: shock3.pnlLong, shock5PnlLong: shock5.pnlLong,
+               shock3PnlShort: shock3.pnlShort, shock5PnlShort: shock5.pnlShort,
+               daysCovered: fr.perDay > 0.001 ? shock5.pnlLong / fr.perDay : 0, carryShock };
+    });
+  }, [vol, products, demPremPct]);
+
+  const shockVIX3 = shockVIX(vol, -3);
+  const shockVIX5 = shockVIX(vol, -5);
+
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "2px", color: T.amber, marginBottom: "6px" }}>
+          THE PROTECTION MENU
+        </div>
+        <div style={{ fontFamily: T.display, fontSize: "22px", fontWeight: 700, marginBottom: "8px" }}>
+          Choose Your Insurance
+        </div>
+        <div style={{ fontSize: "11px", color: T.muted, maxWidth: "700px", margin: "0 auto", lineHeight: 1.6 }}>
+          Every PIX-PERP trades along two axes: <span style={{ color: T.amber, fontWeight: 600 }}>how much you pay daily</span> (the
+          funding rent) vs <span style={{ color: T.green, fontWeight: 600 }}>how much you collect in a crash</span> (the shock payoff).
+          Near-money, short-tenor contracts react violently but burn fast.
+          Deep OTM, long-tenor contracts are cheap but only pay on catastrophe.
+          The tradeoff between rent and response IS the product design decision.
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap", alignItems: "flex-end" }}>
+        <SliderControl label="VIX" value={vol} min={10} max={60} step={1} onChange={setVol} />
+        <SliderControl label="DEMAND PREM" value={demPremPct} min={-50} max={30} step={1}
+          onChange={setDemPremPct}
+          color={demPremPct > 0 ? T.blue : demPremPct < 0 ? T.red : T.muted}
+          formatVal={v => `${v > 0 ? "+" : ""}${v}%`}
+        />
+        <button onClick={() => setShowAll(!showAll)}
+          style={{ padding: "6px 14px", borderRadius: T.rs, border: `1px solid ${T.border}`,
+            background: showAll ? T.greenD : "transparent", color: showAll ? T.green : T.muted,
+            fontFamily: T.mono, fontSize: "10px", cursor: "pointer", fontWeight: 600 }}>
+          {showAll ? "Show Default 4" : "Show All 8"}
+        </button>
+      </div>
+
+      {/* Scenario context bar */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginBottom: "16px",
+                    fontSize: "10px", fontFamily: T.mono }}>
+        <span style={{ color: T.dim }}>SCENARIOS:</span>
+        <span style={{ color: T.amber }}>
+          SPX &minus;3% in 1 day <span style={{ color: T.dim }}>(VIX {f(shockVIX3, 0)})</span>
+        </span>
+        <span style={{ color: T.red }}>
+          SPX &minus;5% in 1 day <span style={{ color: T.dim }}>(VIX {f(shockVIX5, 0)})</span>
+        </span>
+      </div>
+
+      {/* Product Cards Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                    gap: "12px", marginBottom: "24px" }}>
+        {data.map(p => (
+          <div key={p.label} style={{ background: T.surface, borderRadius: T.r, padding: "16px",
+                                       border: `1px solid ${T.border}`, textAlign: "center" }}>
+            {/* Header */}
+            <div style={{ marginBottom: "10px" }}>
+              <div style={{ fontFamily: T.mono, fontSize: "13px", fontWeight: 700, color: T.text }}>{p.label}</div>
+              <div style={{ fontSize: "10px", color: T.green, fontStyle: "italic" }}>{p.archetype}</div>
+              <div style={{ fontSize: "9px", fontFamily: T.mono, color: T.dim, marginTop: "2px" }}>
+                1 PIX-PERP Contract &middot; <span style={{ color: T.text }}>${f(p.perp * 100, 0)}</span>
+              </div>
+            </div>
+            {/* Hero: daily funding in dollars */}
+            <div style={{ fontFamily: T.mono, fontSize: "28px", fontWeight: 800,
+              color: p.perDay > 0.3 ? T.amber : p.perDay > 0.05 ? T.green : T.dim, marginBottom: "6px" }}>
+              ${f(Math.abs(p.perDay * 100), 2)}
+            </div>
+            <div style={{ fontSize: "12px", fontFamily: T.mono, color: T.muted, marginBottom: "10px", fontWeight: 500 }}>funding/day</div>
+            {/* Rate ladder */}
+            <div style={{ fontSize: "9px", fontFamily: T.mono, color: T.muted, marginBottom: "10px", lineHeight: 1.8 }}>
+              <span>8h: {f(p.per8h, 3)}</span> &middot; <span>day: {f(p.perDay, 3)} pts</span> &middot;{" "}
+              <span style={{ color: T.amber }}>APR: {f(p.apr, 0)}%</span>
+            </div>
+            {/* FV / Cash / PERP mini-bar - 2 decimals */}
+            <div style={{ display: "flex", gap: "4px", justifyContent: "center", marginBottom: "8px" }}>
+              {[{ l: "FV", v: p.fv, c: T.amber }, { l: "Cash", v: p.cash, c: T.text }, { l: "PERP", v: p.perp, c: T.green }].map(x => (
+                <div key={x.l} style={{ fontSize: "9px", fontFamily: T.mono, padding: "3px 6px",
+                  background: T.bg, borderRadius: "3px" }}>
+                  <span style={{ color: T.dim }}>{x.l} </span>
+                  <span style={{ color: x.c, fontWeight: 700 }}>{f(x.v, 2)}</span>
+                </div>
+              ))}
+            </div>
+            {/* Max loss bar */}
+            <div style={{ position: "relative", height: "6px", background: T.bg, borderRadius: "3px", overflow: "hidden" }}>
+              <div style={{ position: "absolute", left: 0, top: 0, bottom: 0,
+                width: `${Math.min(100, (p.perp / 100) * 100)}%`,
+                background: `${T.green}40`, borderRadius: "3px" }} />
+            </div>
+            <div style={{ fontSize: "8px", color: T.dim, marginTop: "3px" }}>
+              Max loss (short): {f(p.maxLossShort, 2)} pts &middot; ${f(p.maxLossShort * 100, 0)}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Comparison Table */}
+      <div style={{ background: T.surface, borderRadius: T.r, padding: "16px", border: `1px solid ${T.border}`, marginBottom: "20px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.mono, fontSize: "11px" }}>
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${T.border}` }}>
+              {["CONTRACT", "FV", "CASH", "PERP", "VRP", "RENT/DAY", "APR", `VIX ${f(vol,0)}\u2192${f(shockVIX3,0)}`, `VIX ${f(vol,0)}\u2192${f(shockVIX5,0)}`, "DAYS COVERED"].map((h, i) => (
+                <th key={i} style={{ padding: "8px 6px", textAlign: i === 0 ? "left" : "right",
+                  fontSize: "8px", color: i >= 7 ? (i === 9 ? T.green : i === 8 ? T.red : T.amber) : T.dim,
+                  letterSpacing: "1px", fontWeight: 700 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((m, i) => (
+              <tr key={i} style={{ borderBottom: `1px solid ${T.border}` }}>
+                <td style={{ padding: "8px 6px", fontWeight: 600, color: T.text }}>{m.label}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right", color: T.amber }}>{f(m.fv, 2)}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right" }}>{f(m.cash, 2)}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right", color: T.green }}>{f(m.perp, 2)}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right" }}>{f(m.vrpSpread, 2)}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 600 }}>{f(m.perDay, 3)}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right",
+                  color: m.apr > 800 ? T.red : m.apr > 400 ? T.amber : T.muted, fontWeight: 600 }}>
+                  {f(m.apr, 0)}%
+                </td>
+                <td style={{ padding: "8px 6px", textAlign: "right" }}>
+                  <div style={{ fontWeight: 700, color: m.shock3PnlLong > 15 ? T.amber : m.shock3PnlLong > 5 ? "#E0A030" : T.muted }}>
+                    +{f(m.shock3PnlLong, 1)}
+                  </div>
+                  <div style={{ fontSize: "8px", color: T.dim }}>${f(m.shock3PnlLong * 100, 0)}</div>
+                </td>
+                <td style={{ padding: "8px 6px", textAlign: "right" }}>
+                  <div style={{ fontWeight: 700, color: m.shock5PnlLong > 30 ? T.red : m.shock5PnlLong > 10 ? "#E05050" : T.muted }}>
+                    +{f(m.shock5PnlLong, 1)}
+                  </div>
+                  <div style={{ fontSize: "8px", color: T.dim }}>${f(m.shock5PnlLong * 100, 0)}</div>
+                </td>
+                <td style={{ padding: "8px 6px", textAlign: "right" }}>
+                  <span style={{ color: T.green, fontWeight: 700 }}>{f(m.daysCovered, 0)}</span>
+                  <span style={{ color: T.dim, fontSize: "9px" }}> days</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+        <div style={{ background: T.surface, borderRadius: T.rs, padding: "12px", border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1px", color: T.amber, marginBottom: "4px" }}>
+            RENT/DAY &amp; APR
+          </div>
+          <div style={{ fontSize: "10px", color: T.muted, lineHeight: 1.5 }}>
+            Daily cost of holding protection. APR = annualized rate vs position value.
+          </div>
+        </div>
+        <div style={{ background: T.surface, borderRadius: T.rs, padding: "12px", border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1px", color: T.red, marginBottom: "4px" }}>
+            SCENARIO P&amp;L
+          </div>
+          <div style={{ fontSize: "10px", color: T.muted, lineHeight: 1.5 }}>
+            Probability points gained if SPX drops 3% or 5% in one day.
+            Near-money responds most violently.
+          </div>
+        </div>
+        <div style={{ background: T.surface, borderRadius: T.rs, padding: "12px", border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1px", color: T.green, marginBottom: "4px" }}>
+            DAYS COVERED
+          </div>
+          <div style={{ fontSize: "10px", color: T.muted, lineHeight: 1.5 }}>
+            How many days of rent one 5% crash event pays for. Higher = more efficient protection.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// PANEL 3: YIELD MENU
+// ============================================================================
+const Panel3YieldMenu = () => {
+  const [vol, setVol] = useState(18);
+  const [showAll, setShowAll] = useState(false);
+  const [demPremPct, setDemPremPct] = useState(0);
+
+  const COLLATERAL_LEVELS = [1.0, 0.75, 0.50, 0.25];
+
+  const products = showAll ? PERP_ALL_PRODUCTS : PERP_DEFAULT_PRODUCTS;
+
+  const data = useMemo(() => {
+    return products.map(p => {
+      const fr = computeFundingRate(vol, p.barrier, p.tenor, p.dir, demPremPct);
+      const shock3 = computeShockResponse(vol, p.barrier, p.tenor, p.dir, -3, 1, demPremPct);
+      const shock5 = computeShockResponse(vol, p.barrier, p.tenor, p.dir, -5, 1, demPremPct);
+      const carryShock = computeCarryShockRatio(fr.perDay, shock5.pnlShort);
+      const maxLoss = fr.maxLossShort;
+      const collateral = COLLATERAL_LEVELS.map(pct => ({
+        pct,
+        posted: maxLoss * pct,
+        postedDollars: maxLoss * pct * 100,
+        apr: maxLoss * pct > 0.01 ? (fr.perDay * 365 / (maxLoss * pct)) * 100 : 0,
+        liqBuffer: maxLoss * pct,
+      }));
+      return {
+        ...p, ...fr,
+        shock3PnlShort: shock3.pnlShort, shock5PnlShort: shock5.pnlShort,
+        shock3PnlLong: shock3.pnlLong, shock5PnlLong: shock5.pnlLong,
+        carryShock, collateral,
+        daysToRecover: computeCarryShockRatio(fr.perDay, shock5.pnlShort),
+      };
+    });
+  }, [vol, products, demPremPct]);
+
+  const shockVIX3 = shockVIX(vol, -3);
+  const shockVIX5 = shockVIX(vol, -5);
+
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+      {/* 1. Header */}
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "2px", color: T.green, marginBottom: "6px" }}>
+          THE YIELD MENU
+        </div>
+        <div style={{ fontFamily: T.display, fontSize: "22px", fontWeight: 700, marginBottom: "8px" }}>
+          Harvest the Risk Premium
+        </div>
+        <div style={{ fontSize: "11px", color: T.muted, maxWidth: "700px", margin: "0 auto", lineHeight: 1.6 }}>
+          The short side of every PIX-PERP earns <span style={{ color: T.green, fontWeight: 600 }}>daily funding income</span> {"\u2014"} the
+          price the market pays you for absorbing crash risk. Your maximum loss is <span style={{ color: T.amber, fontWeight: 600 }}>known
+          and bounded</span> because PIX trades 0{"\u2013"}100. At 100% collateral, there are no margin calls and no
+          liquidation {"\u2014"} a structural advantage unique to PIX.
+        </div>
+      </div>
+
+      {/* 2. Controls */}
+      <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap", alignItems: "flex-end" }}>
+        <SliderControl label="VIX" value={vol} min={10} max={60} step={1} onChange={setVol} />
+        <SliderControl label="DEMAND PREM" value={demPremPct} min={-50} max={30} step={1}
+          onChange={setDemPremPct}
+          color={demPremPct > 0 ? T.blue : demPremPct < 0 ? T.red : T.muted}
+          formatVal={v => `${v > 0 ? "+" : ""}${v}%`}
+        />
+        <button onClick={() => setShowAll(!showAll)}
+          style={{ padding: "6px 14px", borderRadius: T.rs, border: `1px solid ${T.border}`,
+            background: showAll ? T.greenD : "transparent", color: showAll ? T.green : T.muted,
+            fontFamily: T.mono, fontSize: "10px", cursor: "pointer", fontWeight: 600 }}>
+          {showAll ? "Show Default 4" : "Show All 8"}
+        </button>
+      </div>
+
+      {/* 3. Risk context bar */}
+      <div style={{ display: "flex", justifyContent: "center", gap: "20px", marginBottom: "16px",
+                    fontSize: "10px", fontFamily: T.mono }}>
+        <span style={{ color: T.dim }}>ADVERSE SCENARIOS:</span>
+        <span style={{ color: T.amber }}>
+          VIX {f(vol, 0)}&rarr;{f(shockVIX3, 0)} (SPX &minus;3%)
+        </span>
+        <span style={{ color: T.red }}>
+          VIX {f(vol, 0)}&rarr;{f(shockVIX5, 0)} (SPX &minus;5%)
+        </span>
+      </div>
+
+      {/* 4. Product Cards Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
+                    gap: "12px", marginBottom: "24px" }}>
+        {data.map(p => (
+          <div key={p.label} style={{ background: T.surface, borderRadius: T.r, padding: "16px",
+                                       border: `1px solid ${T.border}`, textAlign: "center" }}>
+            {/* Card Header */}
+            <div style={{ marginBottom: "10px" }}>
+              <div style={{ fontFamily: T.mono, fontSize: "13px", fontWeight: 700, color: T.text }}>{p.label}</div>
+              <div style={{ fontSize: "10px", color: T.green, fontStyle: "italic" }}>{SHORT_ARCHETYPES[p.archetype] || p.archetype}</div>
+              <div style={{ fontSize: "9px", fontFamily: T.mono, color: T.dim, marginTop: "2px" }}>
+                1 PIX-PERP Short &middot; <span style={{ color: T.text }}>${f(p.maxLossShort * 100, 0)}</span> max risk
+              </div>
+            </div>
+
+            {/* Hero: daily funding earned */}
+            <div style={{ fontFamily: T.mono, fontSize: "28px", fontWeight: 800, color: T.green, marginBottom: "6px" }}>
+              ${f(Math.abs(p.perDay * 100), 2)}
+            </div>
+            <div style={{ fontSize: "12px", fontFamily: T.mono, color: T.muted, marginBottom: "10px", fontWeight: 500 }}>funding/day</div>
+
+            {/* Rate ladder */}
+            <div style={{ fontSize: "9px", fontFamily: T.mono, color: T.muted, marginBottom: "10px", lineHeight: 1.8 }}>
+              <span>8h: {f(p.per8h, 3)}</span> &middot; <span>day: {f(p.perDay, 3)} pts</span> &middot;{" "}
+              <span style={{ color: T.green }}>APR: {f(p.apr, 0)}%</span>
+            </div>
+
+            {/* Collateral table */}
+            <div style={{ marginBottom: "10px", borderRadius: "4px", overflow: "hidden", border: `1px solid ${T.border}` }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.mono, fontSize: "8px" }}>
+                <thead>
+                  <tr>
+                    {["COLLATERAL", "POSTED", "APR", "BUFFER"].map((h, i) => (
+                      <th key={i} style={{ padding: "3px 4px", textAlign: i === 0 ? "left" : "right",
+                        color: T.dim, fontWeight: 700, borderBottom: `1px solid ${T.border}` }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {p.collateral.map((c, ci) => (
+                    <tr key={ci} style={{
+                      borderLeft: ci === 0 ? `2px solid ${T.green}` : "2px solid transparent",
+                      background: ci === 0 ? `${T.green}08` : "transparent",
+                      borderBottom: ci < p.collateral.length - 1 ? `1px solid ${T.border}` : "none",
+                    }}>
+                      <td style={{ padding: "3px 4px", color: ci === 0 ? T.green : T.muted, fontWeight: ci === 0 ? 600 : 400 }}>
+                        {ci === 0 ? "\u25CF" : "\u00A0"}{f(c.pct * 100, 0)}%{ci === 0 ? "(Full)" : ""}
+                      </td>
+                      <td style={{ padding: "3px 4px", textAlign: "right", color: T.text }}>${f(c.postedDollars, 0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</td>
+                      <td style={{ padding: "3px 4px", textAlign: "right",
+                        color: c.apr > 200 ? T.amber : c.apr > 50 ? T.green : T.muted, fontWeight: 600 }}>
+                        {f(c.apr, 0)}%
+                      </td>
+                      <td style={{ padding: "3px 4px", textAlign: "right",
+                        color: ci === 0 ? T.green : T.dim, fontSize: "8px" }}>
+                        {ci === 0 ? "No liq" : `${f(c.liqBuffer, 1)} pts`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* FV / Cash / PERP mini-bar */}
+            <div style={{ display: "flex", gap: "4px", justifyContent: "center" }}>
+              {[{ l: "FV", v: p.fv, c: T.amber }, { l: "Cash", v: p.cash, c: T.text }, { l: "PERP", v: p.perp, c: T.green }].map(x => (
+                <div key={x.l} style={{ fontSize: "9px", fontFamily: T.mono, padding: "3px 6px",
+                  background: T.bg, borderRadius: "3px" }}>
+                  <span style={{ color: T.dim }}>{x.l} </span>
+                  <span style={{ color: x.c, fontWeight: 700 }}>{f(x.v, 2)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 5. Comparison Table */}
+      <div style={{ background: T.surface, borderRadius: T.r, padding: "16px", border: `1px solid ${T.border}`, marginBottom: "20px" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.mono, fontSize: "11px" }}>
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${T.border}` }}>
+              {[
+                { h: "CONTRACT", c: T.dim },
+                { h: "FV", c: T.dim },
+                { h: "CASH", c: T.dim },
+                { h: "PERP", c: T.dim },
+                { h: "VRP", c: T.dim },
+                { h: "EARN/DAY", c: T.green },
+                { h: "APR(100%)", c: T.green },
+                { h: "APR(50%)", c: T.green },
+                { h: "APR(25%)", c: T.green },
+                { h: `VIX ${f(vol,0)}\u2192${f(shockVIX3,0)}`, c: T.red },
+                { h: `VIX ${f(vol,0)}\u2192${f(shockVIX5,0)}`, c: T.red },
+                { h: "DAYS TO RECOVER", c: T.amber },
+              ].map((col, i) => (
+                <th key={i} style={{ padding: "8px 6px", textAlign: i === 0 ? "left" : "right",
+                  fontSize: "8px", color: col.c, letterSpacing: "1px", fontWeight: 700 }}>{col.h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {data.map((m, i) => (
+              <tr key={i} style={{ borderBottom: `1px solid ${T.border}` }}>
+                <td style={{ padding: "8px 6px", fontWeight: 600, color: T.text }}>{m.label}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right", color: T.amber }}>{f(m.fv, 2)}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right" }}>{f(m.cash, 2)}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right", color: T.green }}>{f(m.perp, 2)}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right" }}>{f(m.vrpSpread, 2)}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right", color: T.green, fontWeight: 600 }}>{f(m.perDay, 3)}</td>
+                <td style={{ padding: "8px 6px", textAlign: "right", color: T.green, fontWeight: 600 }}>
+                  {f(m.collateral[0].apr, 0)}%
+                </td>
+                <td style={{ padding: "8px 6px", textAlign: "right",
+                  color: m.collateral[2].apr > 200 ? T.amber : m.collateral[2].apr > 50 ? T.green : T.muted, fontWeight: 600 }}>
+                  {f(m.collateral[2].apr, 0)}%
+                </td>
+                <td style={{ padding: "8px 6px", textAlign: "right",
+                  color: m.collateral[3].apr > 200 ? T.amber : m.collateral[3].apr > 50 ? T.green : T.muted, fontWeight: 600 }}>
+                  {f(m.collateral[3].apr, 0)}%
+                </td>
+                <td style={{ padding: "8px 6px", textAlign: "right" }}>
+                  <span style={{ fontWeight: 700, color: T.red }}>{f(m.shock3PnlShort, 1)}</span>
+                </td>
+                <td style={{ padding: "8px 6px", textAlign: "right" }}>
+                  <span style={{ fontWeight: 700, color: T.red }}>{f(m.shock5PnlShort, 1)}</span>
+                </td>
+                <td style={{ padding: "8px 6px", textAlign: "right" }}>
+                  <span style={{ color: m.daysToRecover < 100 ? T.green : m.daysToRecover < 300 ? T.amber : T.red, fontWeight: 700 }}>
+                    {f(m.daysToRecover, 0)}
+                  </span>
+                  <span style={{ color: T.dim, fontSize: "9px" }}> days</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 6. PIX vs Traditional Vol Selling */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "20px" }}>
+        {/* Short SPX Puts */}
+        <div style={{ background: T.surface, borderRadius: T.r, padding: "16px", border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: "10px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.red,
+            fontWeight: 700, marginBottom: "12px", textAlign: "center" }}>SHORT SPX PUTS</div>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: "10px", color: T.muted, lineHeight: 2 }}>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.red}30`, marginBottom: "4px" }}>Unlimited loss potential</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.red}30`, marginBottom: "4px" }}>Margin escalation in crashes</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.red}30`, marginBottom: "4px" }}>Forced liquidation at worst time</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.red}30`, marginBottom: "4px" }}>~30% annualized theta (VIX 18)</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.red}30` }}>Cannot compute APR on capital {"\u2014"} loss is unbounded</li>
+          </ul>
+        </div>
+
+        {/* Short VIX Futures */}
+        <div style={{ background: T.surface, borderRadius: T.r, padding: "16px", border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: "10px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.red,
+            fontWeight: 700, marginBottom: "12px", textAlign: "center" }}>SHORT VIX FUTURES</div>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: "10px", color: T.muted, lineHeight: 2 }}>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.red}30`, marginBottom: "4px" }}>Unlimited loss potential</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.red}30`, marginBottom: "4px" }}>Backwardation risk + forced rolls</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.red}30`, marginBottom: "4px" }}>March 2020: short at 18, lost 60+ pts</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.red}30` }}>Margin calls force exits at max pain</li>
+          </ul>
+        </div>
+
+        {/* Short PIX-PERP */}
+        <div style={{ background: T.surface, borderRadius: T.r, padding: "16px", border: `1px solid ${T.green}20` }}>
+          <div style={{ fontSize: "10px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.green,
+            fontWeight: 700, marginBottom: "12px", textAlign: "center" }}>SHORT PIX-PERP (100% COLL.)</div>
+          <ul style={{ listStyle: "none", padding: 0, margin: 0, fontSize: "10px", color: T.muted, lineHeight: 2 }}>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.green}30`, marginBottom: "4px" }}>Max loss KNOWN and BOUNDED</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.green}30`, marginBottom: "4px" }}>No margin calls at 100% collateral</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.green}30`, marginBottom: "4px" }}>No forced liquidation {"\u2014"} ever</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.green}30`, marginBottom: "4px" }}>No roll, no delta hedging needed</li>
+            <li style={{ paddingLeft: "12px", borderLeft: `2px solid ${T.green}30` }}>~18{"\u2013"}24% APR at VIX 18 (full collateral)</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* 7. Bottom Legend */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+        <div style={{ background: T.surface, borderRadius: T.rs, padding: "12px", border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1px", color: T.green, marginBottom: "4px" }}>
+            APR AT FULL COLLATERAL
+          </div>
+          <div style={{ fontSize: "10px", color: T.muted, lineHeight: 1.5 }}>
+            Yield earned as % of maximum possible loss. At 100% collateral, no liquidation is possible {"\u2014"} this is the true risk-adjusted return.
+          </div>
+        </div>
+        <div style={{ background: T.surface, borderRadius: T.rs, padding: "12px", border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1px", color: T.amber, marginBottom: "4px" }}>
+            COLLATERAL LEVERAGE
+          </div>
+          <div style={{ fontSize: "10px", color: T.muted, lineHeight: 1.5 }}>
+            Lower collateral = higher APR on capital deployed but introduces liquidation risk. The bounded 0{"\u2013"}100 structure means even worst-case loss is known.
+          </div>
+        </div>
+        <div style={{ background: T.surface, borderRadius: T.rs, padding: "12px", border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1px", color: T.dim, marginBottom: "4px" }}>
+            DAYS TO RECOVER
+          </div>
+          <div style={{ fontSize: "10px", color: T.muted, lineHeight: 1.5 }}>
+            How many days of funding income to recover from a &minus;5% SPX shock. Lower = better risk/reward for the short position.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// PANEL 3: VRP SURFACE
+// ============================================================================
+const Panel3VRPSurface = () => {
+  const [vix, setVix] = useState(18);
+  const barriersVRP = [3, 5, 7, 10, 15, 20];
+  const tenorsVRP = [7, 14, 30, 60, 90];
+
+  const surfaceData = useMemo(() => {
+    return barriersVRP.map(b => {
+      const row = { barrier: b };
+      tenorsVRP.forEach(t => {
+        const cash = pixCash(vix, b, t, "DOWN");
+        const fv = pixFairValue(vix, b, t, "DOWN");
+        const vrp = cash - fv;
+        const relPct = fv > 0.1 ? ((vrp / fv) * 100) : 0;
+        const zone = fv < 4 ? 2 : 1;
+        row[`t${t}`] = { cash, fv, vrp, relPct, zone };
+      });
+      return row;
+    });
+  }, [vix]);
+
+  // Summary stats for key products
+  const keyProducts = useMemo(() => [
+    { label: "30D-DN5%", cash: pixCash(vix, 5, 30), fv: pixFairValue(vix, 5, 30), vrp: pixVRPSpread(vix, 5, 30) },
+    { label: "30D-DN10%", cash: pixCash(vix, 10, 30), fv: pixFairValue(vix, 10, 30), vrp: pixVRPSpread(vix, 10, 30) },
+    { label: "90D-DN10%", cash: pixCash(vix, 10, 90), fv: pixFairValue(vix, 10, 90), vrp: pixVRPSpread(vix, 10, 90) },
+    { label: "30D-DN15%", cash: pixCash(vix, 15, 30), fv: pixFairValue(vix, 15, 30), vrp: pixVRPSpread(vix, 15, 30) },
+  ], [vix]);
+
+  // Color scale for VRP relative %
+  const vrpColor = (relPct) => {
+    if (relPct >= 80) return T.green;
+    if (relPct >= 40) return "rgba(0,200,83,0.7)";
+    if (relPct >= 15) return "rgba(0,200,83,0.45)";
+    if (relPct >= 5) return T.dim;
+    return "rgba(255,255,255,0.2)";
+  };
+
+  const vrpBg = (relPct) => {
+    if (relPct >= 80) return "rgba(0,200,83,0.12)";
+    if (relPct >= 40) return "rgba(0,200,83,0.07)";
+    if (relPct >= 15) return "rgba(0,200,83,0.04)";
+    return "transparent";
+  };
+
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: "24px" }}>
+        <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "2px", color: T.green, marginBottom: "6px" }}>
+          VOLATILITY RISK PREMIUM
+        </div>
+        <div style={{ fontFamily: T.display, fontSize: "22px", fontWeight: 700, marginBottom: "8px" }}>
+          The VRP Surface
+        </div>
+        <div style={{ fontSize: "11px", color: T.muted, maxWidth: "700px", margin: "0 auto", lineHeight: 1.6 }}>
+          Cash Index (market-implied) vs Fair Value (VRP-corrected) across every barrier and tenor.
+          The gap between them is the Volatility Risk Premium in probability points {"\u2014"}
+          the structural overpricing that VRP sellers collect.
+        </div>
+      </div>
+
+      {/* VIX slider */}
+      <Card style={{ marginBottom: "20px" }}>
+        <div style={{ display: "flex", gap: "16px", alignItems: "flex-end" }}>
+          <SliderControl label="VIX LEVEL" value={vix} min={10} max={60} step={1} onChange={setVix} />
+          <div style={{ fontSize: "10px", fontFamily: T.mono, color: T.dim, paddingBottom: "4px" }}>
+            Regime: <span style={{ color: vix <= 13 ? T.green : vix <= 19 ? T.text : vix <= 25 ? T.amber : vix <= 35 ? "#E08000" : T.red, fontWeight: 700 }}>
+              {vix <= 13 ? "CALM" : vix <= 19 ? "NORMAL" : vix <= 25 ? "ELEVATED" : vix <= 35 ? "FEARFUL" : "CRISIS"}
+            </span>
+          </div>
+        </div>
+      </Card>
+
+      {/* Key insight callout */}
+      <div style={{
+        padding: "16px 20px", marginBottom: "20px", borderRadius: T.r,
+        background: `linear-gradient(135deg, ${T.greenG}, transparent)`,
+        borderLeft: `3px solid ${T.green}`,
+      }}>
+        <div style={{ fontSize: "13px", color: T.text, lineHeight: 1.6 }}>
+          <strong style={{ color: T.green }}>Key insight:</strong>{" "}
+          The market overprices crash insurance by {f(keyProducts[1].fv > 0.1 ? ((keyProducts[1].vrp / keyProducts[1].fv) * 100) : 0, 0)}%
+          at DN10-30D (VIX {vix}). That premium is what shorts collect.
+          At VIX 20, a 10% crash within 30 days has ~{f(keyProducts[1].fv, 1)}% true probability but trades at ~{f(keyProducts[1].cash, 1)}%.
+        </div>
+      </div>
+
+      {/* VRP Heatmap Table */}
+      <Card style={{ marginBottom: "20px", overflowX: "auto" }}>
+        <Label>CASH vs FAIR VALUE vs VRP {"\u2014"} FULL SURFACE</Label>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.mono, fontSize: "10px" }}>
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${T.border}` }}>
+              <th style={{ padding: "8px 6px", textAlign: "left", fontSize: "8px", color: T.dim, letterSpacing: "1px" }}>
+                BARRIER
+              </th>
+              {tenorsVRP.map(t => (
+                <th key={t} colSpan={3} style={{ padding: "8px 4px", textAlign: "center", fontSize: "8px", color: T.dim, letterSpacing: "1px", borderLeft: `1px solid ${T.border}` }}>
+                  {t}D
+                </th>
+              ))}
+            </tr>
+            <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+              <th style={{ padding: "4px 6px", fontSize: "7px", color: T.dim }}></th>
+              {tenorsVRP.map(t => (
+                <React.Fragment key={t}>
+                  <th style={{ padding: "4px 3px", textAlign: "center", fontSize: "7px", color: T.muted, borderLeft: `1px solid ${T.border}` }}>CASH</th>
+                  <th style={{ padding: "4px 3px", textAlign: "center", fontSize: "7px", color: T.amber }}>FV</th>
+                  <th style={{ padding: "4px 3px", textAlign: "center", fontSize: "7px", color: T.green }}>VRP</th>
+                </React.Fragment>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {surfaceData.map((row, ri) => (
+              <tr key={ri} style={{ borderBottom: `1px solid ${T.border}` }}>
+                <td style={{ padding: "8px 6px", fontWeight: 700, color: T.text, fontSize: "11px" }}>
+                  DN{row.barrier}%
+                  {row[`t30`] && (
+                    <span style={{ fontSize: "7px", color: row[`t30`].zone === 2 ? T.red : T.dim, marginLeft: "4px" }}>
+                      Z{row[`t30`].zone}
+                    </span>
+                  )}
+                </td>
+                {tenorsVRP.map(t => {
+                  const cell = row[`t${t}`];
+                  return (
+                    <React.Fragment key={t}>
+                      <td style={{ padding: "6px 3px", textAlign: "center", borderLeft: `1px solid ${T.border}`, background: vrpBg(cell.relPct) }}>
+                        {f(cell.cash, 2)}
+                      </td>
+                      <td style={{ padding: "6px 3px", textAlign: "center", color: T.amber, background: vrpBg(cell.relPct) }}>
+                        {f(cell.fv, 2)}
+                      </td>
+                      <td style={{
+                        padding: "6px 3px", textAlign: "center", fontWeight: 700,
+                        color: vrpColor(cell.relPct), background: vrpBg(cell.relPct),
+                      }}>
+                        {f(cell.vrp, 2)}
+                        <div style={{ fontSize: "7px", fontWeight: 400, color: T.dim }}>
+                          {f(cell.relPct, 0)}%
+                        </div>
+                      </td>
+                    </React.Fragment>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Summary stats for key products */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "20px" }}>
+        {keyProducts.map(kp => (
+          <Card key={kp.label} style={{ padding: "14px", textAlign: "center" }}>
+            <div style={{ fontSize: "11px", fontFamily: T.mono, fontWeight: 700, color: T.text, marginBottom: "8px" }}>
+              {kp.label}
+            </div>
+            <div style={{ display: "flex", justifyContent: "center", gap: "8px", marginBottom: "8px" }}>
+              <div>
+                <div style={{ fontSize: "8px", color: T.dim }}>CASH</div>
+                <div style={{ fontSize: "16px", fontWeight: 700, fontFamily: T.mono }}>{f(kp.cash, 2)}</div>
+              </div>
+              <div style={{ width: "1px", background: T.border }} />
+              <div>
+                <div style={{ fontSize: "8px", color: T.amber }}>FV</div>
+                <div style={{ fontSize: "16px", fontWeight: 700, fontFamily: T.mono, color: T.amber }}>{f(kp.fv, 2)}</div>
+              </div>
+            </div>
+            <div style={{ fontSize: "10px", fontFamily: T.mono }}>
+              <span style={{ color: T.green, fontWeight: 700 }}>VRP: {f(kp.vrp, 2)}</span>
+              <span style={{ color: T.dim }}> ({kp.fv > 0.1 ? f((kp.vrp / kp.fv) * 100, 0) : "0"}%)</span>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Zone explanation */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+        <div style={{ background: T.surface, borderRadius: T.rs, padding: "14px", border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "1px", color: T.green, marginBottom: "6px", fontWeight: 700 }}>
+            ZONE 1: VRP CARRY (FV 4-55%)
+          </div>
+          <div style={{ fontSize: "11px", color: T.muted, lineHeight: 1.6 }}>
+            Well-calibrated probability space. VRP is stable and harvestable.
+            Short VRP trades collect the structural overpricing between Cash and Fair Value.
+            This is the bread-and-butter zone for institutional carry strategies.
+          </div>
+        </div>
+        <div style={{ background: T.surface, borderRadius: T.rs, padding: "14px", border: `1px solid ${T.border}` }}>
+          <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "1px", color: T.red, marginBottom: "6px", fontWeight: 700 }}>
+            ZONE 2: CRISIS INSURANCE (FV &lt;4%)
+          </div>
+          <div style={{ fontSize: "11px", color: T.muted, lineHeight: 1.6 }}>
+            Extreme tail territory. Crash momentum dominates: 38.3% conditional probability
+            after a 10D -10% drawdown vs 1.0% unconditional.
+            VRP relative overpricing is largest here, but absolute spread is thin.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// PANEL 4: EVENT DECOMPOSITION
+// ============================================================================
+const Panel4Events = () => {
+  const [baseVol, setBaseVol] = useState(18);
+  const [eventVol, setEventVol] = useState(52);
+  const [eventDay, setEventDay] = useState(5);
+  const [barrier, setBarrier] = useState(5);
+
+  const decomp = useMemo(() => {
+    return TENORS.map(t => {
+      const normal = pixCalc(baseVol, barrier, t, "DOWN");
+      const eff = evtEffVol(t, eventDay, baseVol, eventVol);
+      const withEvent = pixCalc(eff, barrier, t, "DOWN");
+      const blind = t < eventDay;
+      return {
+        tenor: `${t}D`, t,
+        diffusion: +normal.toFixed(1),
+        event: +(withEvent - normal).toFixed(1),
+        total: +withEvent.toFixed(1),
+        blind,
+      };
+    });
+  }, [baseVol, eventVol, eventDay, barrier]);
+
+  const peakProduct = decomp.filter(d => !d.blind).reduce((a, b) => (b.event > a.event ? b : a), { event: 0, tenor: "?" });
+
+  // Diagonal ratio: 7D/14D ratio
+  const diag7 = decomp.find(d => d.t === 7);
+  const diag14 = decomp.find(d => d.t === 14);
+  const normalRatio7_14 = useMemo(() => {
+    const n7 = pixCalc(baseVol, barrier, 7, "DOWN");
+    const n14 = pixCalc(baseVol, barrier, 14, "DOWN");
+    return n14 > 0.1 ? n7 / n14 : 0;
+  }, [baseVol, barrier]);
+  const eventRatio7_14 = (diag7 && diag14 && diag14.total > 0.1) ? diag7.total / diag14.total : 0;
+
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+      <div style={{ textAlign: "center", marginBottom: "24px" }}>
+        <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "2px", color: T.amber, marginBottom: "6px" }}>
+          EVENT INTELLIGENCE
+        </div>
+        <div style={{ fontFamily: T.display, fontSize: "26px", fontWeight: 700, marginBottom: "8px" }}>
+          Event Decomposition
+        </div>
+        <div style={{ fontSize: "12px", color: T.muted, maxWidth: "700px", margin: "0 auto", lineHeight: 1.7 }}>
+          Every PIX value decomposes into <span style={{ color: T.muted, fontWeight: 600 }}>Diffusion</span> (random walk) +{" "}
+          <span style={{ color: T.amber, fontWeight: 600 }}>Event Risk</span> (scheduled catalyst).
+          Products whose tenor spans the event absorb the spike. Products that expire before the event are blind.
+        </div>
+      </div>
+
+      {/* Event toggle */}
+      <div style={{ textAlign: "center", padding: "12px 20px", marginBottom: "20px", borderRadius: T.r,
+        background: `${T.amber}08`, border: `1px solid ${T.amber}25` }}>
+        <div style={{ fontFamily: T.mono, fontSize: "14px", fontWeight: 700, color: T.amber }}>
+          FOMC in {eventDay} days
+        </div>
+        <div style={{ fontSize: "10px", fontFamily: T.mono, color: T.muted, marginTop: "4px" }}>
+          Event vol: {eventVol}% &middot; Products with tenor &ge; {eventDay}D see the event &middot; Below = BLIND
+        </div>
+      </div>
+
+      {/* Controls */}
+      <Card style={{ marginBottom: "20px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "4px" }}>
+          <SliderControl label="EVENT IN" value={eventDay} min={1} max={14} step={1} onChange={setEventDay} color={T.amber}
+            formatVal={v => `${v} days`} />
+          <SliderControl label="BASE VOL" value={baseVol} min={10} max={40} step={0.1} onChange={setBaseVol} />
+          <SliderControl label="EVENT VOL" value={eventVol} min={baseVol} max={120} step={1} onChange={setEventVol} color={T.amber} />
+          <div>
+            <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.dim, marginBottom: "8px" }}>BARRIER</div>
+            <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+              {[3, 5, 7, 10].map(b => (
+                <Pill key={b} active={barrier === b} onClick={() => setBarrier(b)}>DN{b}%</Pill>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Stacked bar chart */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>DIFFUSION + EVENT RISK BY TENOR</Label>
+        <div style={{ height: "300px" }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={decomp} margin={{ top: 10, right: 10, bottom: 5, left: 10 }}>
+              <CartesianGrid stroke="rgba(255,255,255,0.03)" vertical={false} />
+              <XAxis dataKey="tenor" tick={{ fontSize: 10, fill: T.dim, fontFamily: T.mono }} />
+              <YAxis tick={{ fontSize: 9, fill: T.dim, fontFamily: T.mono }} />
+              <Tooltip contentStyle={{ background: T.raised, border: `1px solid ${T.border}`, borderRadius: T.rs, fontFamily: T.mono, fontSize: "11px" }}
+                formatter={(v, name) => [`${v} pts`, name === "diffusion" ? "Diffusion" : "Event Risk"]} />
+              <Bar dataKey="diffusion" stackId="a" fill="rgba(255,255,255,0.2)" name="diffusion" />
+              <Bar dataKey="event" stackId="a" fill={T.amber} fillOpacity={0.75} radius={[3, 3, 0, 0]} name="event" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </Card>
+
+      {/* Decomposition table */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>EVENT DECOMPOSITION TABLE</Label>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.mono, fontSize: "11px" }}>
+            <thead>
+              <tr style={{ borderBottom: `2px solid ${T.border}` }}>
+                {["TENOR", "DIFFUSION", "EVENT RISK", "TOTAL PIX", "STATUS"].map(h => (
+                  <th key={h} style={{ padding: "8px 8px", textAlign: h === "TENOR" ? "left" : "center",
+                    color: T.dim, fontSize: "9px", letterSpacing: "0.5px", fontWeight: 700 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {decomp.map(d => (
+                <tr key={d.tenor} style={{ borderBottom: `1px solid ${T.border}` }}>
+                  <td style={{ padding: "8px 8px", color: d.blind ? T.dim : T.text, fontWeight: d.t === 7 ? 700 : 400 }}>{d.tenor}</td>
+                  <td style={{ padding: "8px 8px", textAlign: "center", color: T.muted }}>{d.diffusion.toFixed(1)}</td>
+                  <td style={{ padding: "8px 8px", textAlign: "center", color: d.event > 0 ? T.amber : T.dim, fontWeight: d.event > 5 ? 700 : 400 }}>
+                    {d.event > 0 ? `+${d.event.toFixed(1)}` : "\u2014"}
+                  </td>
+                  <td style={{ padding: "8px 8px", textAlign: "center", color: d.blind ? T.dim : T.green, fontWeight: 600 }}>{d.total.toFixed(1)}</td>
+                  <td style={{ padding: "8px 8px", textAlign: "center" }}>
+                    <span style={{ fontSize: "9px", padding: "2px 10px", borderRadius: "3px",
+                      background: d.blind ? "rgba(255,255,255,0.05)" : `${T.amber}15`,
+                      color: d.blind ? T.dim : T.amber }}>
+                      {d.blind ? "BLIND" : "SPANNING"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Diagonal ratio section */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>DIAGONAL DETECTION &mdash; 7D / 14D RATIO</Label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+          <div style={{ padding: "16px", background: T.raised, borderRadius: T.rs, textAlign: "center", border: `1px solid ${T.border}` }}>
+            <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1px", color: T.dim, marginBottom: "4px" }}>DIFFUSION ONLY (NORMAL)</div>
+            <div style={{ fontSize: "32px", fontWeight: 800, fontFamily: T.mono, color: T.muted }}>{f(normalRatio7_14, 3)}</div>
+            <div style={{ fontSize: "10px", color: T.dim, marginTop: "4px" }}>7D-DN{barrier}% / 14D-DN{barrier}%</div>
+          </div>
+          <div style={{ padding: "16px", background: `${T.amber}06`, borderRadius: T.rs, textAlign: "center",
+            border: `1px solid ${Math.abs(eventRatio7_14 - normalRatio7_14) > 0.05 ? T.amber : T.border}` }}>
+            <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1px", color: T.amber, marginBottom: "4px" }}>WITH EVENT</div>
+            <div style={{ fontSize: "32px", fontWeight: 800, fontFamily: T.mono,
+              color: Math.abs(eventRatio7_14 - normalRatio7_14) > 0.05 ? T.amber : T.muted }}>{f(eventRatio7_14, 3)}</div>
+            <div style={{ fontSize: "10px", color: T.dim, marginTop: "4px" }}>
+              {Math.abs(eventRatio7_14 - normalRatio7_14) > 0.05
+                ? (eventRatio7_14 > normalRatio7_14 ? "RATIO SPIKE \u2014 Event detected" : "RATIO INVERSION \u2014 Event absorbed differentially")
+                : "No significant divergence"}
+            </div>
+          </div>
+        </div>
+        <div style={{ fontSize: "10px", color: T.muted, lineHeight: 1.6 }}>
+          Under pure diffusion the 7D/14D ratio is stable (~{f(normalRatio7_14, 3)}). When a discrete event
+          sits between tenors, the ratio breaks &mdash; this is the co-responsive path detection that
+          signals event risk before the formal event window. The diagonal breaks under events
+          because the 7D product is BLIND while the 14D product SPANS the FOMC.
+        </div>
+      </Card>
+
+      {/* Key callout */}
+      <div style={{ padding: "16px 20px", borderRadius: T.r,
+        background: `linear-gradient(135deg, ${T.amber}08, transparent)`, borderLeft: `3px solid ${T.amber}` }}>
+        <div style={{ fontSize: "13px", color: T.text, lineHeight: 1.7 }}>
+          <strong style={{ color: T.amber }}>The event risk spike is the tradeable signal.</strong>{" "}
+          The market is pricing <span style={{ fontFamily: T.mono, fontWeight: 700, color: T.amber }}>
+          {peakProduct.event > 0 ? f(peakProduct.event, 1) : "0"}</span> probability points of FOMC risk
+          on {peakProduct.tenor}. No other instrument produces that statement &mdash; the decomposition of
+          market-implied probability into diffusion and event components is unique to PIX.
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// PANEL 5: FUNDING MECHANISM
+// ============================================================================
+const Panel5Funding = () => {
+  const [vol, setVol] = useState(18);
+  const [barrier, setBarrier] = useState(10);
+  const [tenor, setTenor] = useState(30);
+  const [dir, setDir] = useState("DOWN");
+  const [demPremPct, setDemPremPct] = useState(0);
+
+  const prodLabel = `${tenor}D-${dir === "DOWN" ? "DN" : "UP"}${barrier}%`;
+
+  const data = useMemo(() => {
+    const cash = pixCash(vol, barrier, tenor, dir);
+    const fv = pixFairValue(vol, barrier, tenor, dir);
+    const vrpSpread = cash - fv;
+    const demandPremium = cash * (demPremPct / 100);
+    const perp = cash + demandPremium;
+    const totalBasis = perp - fv;
+    const nPd = Math.floor(tenor * 3);
+    const per8h = nPd > 0 ? totalBasis / nPd : 0;
+    const perDay = tenor > 0 ? totalBasis / tenor : 0;
+    const perHour = perDay / 24;
+    const apr = Math.abs(perp) >= 0.1 ? Math.min(9999, (perDay / perp) * 365 * 100) : 0;
+    const maxVal = Math.max(perp, cash, 10);
+    return {
+      cash, fv, vrpSpread, demandPremium, perp, totalBasis,
+      nPd, per8h, perDay, perHour, overTenor: totalBasis, apr, maxVal,
+      maxLossLong: perp, maxLossShort: 100 - perp,
+    };
+  }, [vol, barrier, tenor, dir, demPremPct]);
+
+  const pos = data.totalBasis >= 0;
+
+  const layers = [
+    { label: "PIX-PERP PRICE", value: data.perp, color: T.green, desc: "Where the PIX-PERP is trading right now" },
+    { label: "PIX CASH INDEX", value: data.cash, color: T.text, desc: "Market-implied probability (carries full VRP)" },
+    { label: "PIX FAIR VALUE", value: data.fv, color: T.amber, desc: "Calibrated probability \u2014 what actually happens" },
+  ];
+
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+      {/* Controls */}
+      <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap", alignItems: "flex-end" }}>
+        <SliderControl label="VIX" value={vol} min={10} max={60} step={1} onChange={setVol} />
+        <div style={{ display: "flex", gap: "6px" }}>
+          {[{ b: 3, t: 7, d: "DOWN", l: "7D-DN3%" }, { b: 5, t: 30, d: "DOWN", l: "30D-DN5%" },
+            { b: 10, t: 30, d: "DOWN", l: "30D-DN10%" }, { b: 10, t: 90, d: "DOWN", l: "90D-DN10%" }].map(p => (
+            <button key={p.l} onClick={() => { setBarrier(p.b); setTenor(p.t); setDir(p.d); }}
+              style={{ padding: "6px 12px", borderRadius: T.rs, border: `1px solid ${barrier === p.b && tenor === p.t ? T.green : T.border}`,
+                background: barrier === p.b && tenor === p.t ? T.greenD : "transparent",
+                color: barrier === p.b && tenor === p.t ? T.green : T.muted,
+                fontFamily: T.mono, fontSize: "10px", cursor: "pointer", fontWeight: 600 }}>
+              {p.l}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: "24px" }}>
+        <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "2px", color: T.green, marginBottom: "6px" }}>
+          PIX-PERP FUNDING RATE
+        </div>
+        <div style={{ fontFamily: T.display, fontSize: "26px", fontWeight: 700, marginBottom: "8px" }}>
+          The Variance Risk Premium &mdash; Priced by the Hour
+        </div>
+        <div style={{ fontSize: "12px", color: T.muted, maxWidth: "700px", margin: "0 auto", lineHeight: 1.6 }}>
+          Every perpetual position has a carrying cost. The PIX-PERP funding rate captures the global
+          volatility risk premium in one number &mdash; the hourly cost of holding crash insurance, settled continuously.
+        </div>
+      </div>
+
+      {/* Three-price hero */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "2px", marginBottom: "24px" }}>
+        <div style={{ padding: "16px", background: T.raised, borderRadius: `${T.rs} 0 0 ${T.rs}`, textAlign: "center" }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.green, marginBottom: "6px" }}>
+            PIX-PERP MARK PRICE ({prodLabel})
+          </div>
+          <div style={{ fontSize: "32px", fontWeight: 800, fontFamily: T.mono, color: T.green }}>{f(data.perp, 2)}</div>
+          <div style={{ fontSize: "10px", color: data.perp < data.fv ? T.red : T.dim, marginTop: "4px" }}>
+            {data.perp < data.fv ? "Trading below Fair Value \u2014 shorts pay longs"
+              : demPremPct < 0 ? "Trading below Cash Index" : "Where the PIX-PERP is trading"}
+          </div>
+        </div>
+        <div style={{ padding: "16px", background: T.raised, textAlign: "center" }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.text, marginBottom: "6px" }}>
+            PIX CASH INDEX ({prodLabel})
+          </div>
+          <div style={{ fontSize: "32px", fontWeight: 800, fontFamily: T.mono }}>{f(data.cash, 2)}</div>
+          <div style={{ fontSize: "10px", color: T.dim, marginTop: "4px" }}>Market-implied probability</div>
+        </div>
+        <div style={{ padding: "16px", background: T.raised, borderRadius: `0 ${T.rs} ${T.rs} 0`, textAlign: "center" }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.amber, marginBottom: "6px" }}>
+            PIX FAIR VALUE ({prodLabel})
+          </div>
+          <div style={{ fontSize: "32px", fontWeight: 800, fontFamily: T.mono, color: T.amber }}>{f(data.fv, 2)}</div>
+          <div style={{ fontSize: "10px", color: T.dim, marginTop: "4px" }}>VRP-corrected physical probability</div>
+        </div>
+      </div>
+
+      {/* Current funding rate hero */}
+      <div style={{ background: `linear-gradient(135deg, ${T.bg}, ${T.raised})`,
+        border: `1px solid ${T.border}`, borderRadius: T.r,
+        padding: "28px 20px", marginBottom: "20px", textAlign: "center" }}>
+        <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "2px", color: T.dim, marginBottom: "8px" }}>
+          CURRENT FUNDING RATE &middot; PIX-{prodLabel}
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", gap: "12px", marginBottom: "14px", fontFamily: T.mono, fontSize: "11px" }}>
+          <span><span style={{ color: T.dim, fontSize: "9px" }}>PERP</span>{" "}
+            <span style={{ color: T.green, fontWeight: 700 }}>{f(data.perp, 2)}</span></span>
+          <span style={{ color: T.border }}>&middot;</span>
+          <span><span style={{ color: T.dim, fontSize: "9px" }}>CASH</span>{" "}
+            <span style={{ fontWeight: 700 }}>{f(data.cash, 2)}</span></span>
+          <span style={{ color: T.border }}>&middot;</span>
+          <span><span style={{ color: T.dim, fontSize: "9px" }}>FV</span>{" "}
+            <span style={{ color: T.amber, fontWeight: 700 }}>{f(data.fv, 2)}</span></span>
+        </div>
+        <div style={{ fontFamily: T.mono, fontSize: "48px", fontWeight: 800, color: pos ? T.green : T.red, lineHeight: 1 }}>
+          {f(Math.abs(data.perDay), 3)}
+        </div>
+        <div style={{ fontSize: "13px", fontFamily: T.mono, color: T.dim, marginTop: "6px", letterSpacing: "1px" }}>
+          probability points per day
+        </div>
+        {/* Sub-rates */}
+        <div style={{ marginTop: "16px", display: "flex", justifyContent: "center", gap: "20px",
+          fontSize: "11px", fontFamily: T.mono, flexWrap: "wrap" }}>
+          <span style={{ color: T.muted }}>
+            <span style={{ color: T.dim, fontSize: "9px" }}>HOURLY</span>{" "}
+            <span style={{ fontWeight: 700 }}>{f(Math.abs(data.perHour), 4)}</span>
+          </span>
+          <span style={{ color: T.border }}>|</span>
+          <span style={{ color: T.muted }}>
+            <span style={{ color: T.dim, fontSize: "9px" }}>PER 8H</span>{" "}
+            <span style={{ fontWeight: 700 }}>{f(Math.abs(data.per8h), 3)}</span>
+          </span>
+          <span style={{ color: T.border }}>|</span>
+          <span style={{ color: pos ? T.green : T.red }}>
+            <span style={{ color: T.dim, fontSize: "9px" }}>OVER {tenor}D</span>{" "}
+            <span style={{ fontWeight: 800 }}>{f(Math.abs(data.overTenor), 1)} pts</span>
+          </span>
+          <span style={{ color: T.border }}>|</span>
+          <span style={{ color: T.amber }}>
+            <span style={{ color: T.dim, fontSize: "9px" }}>APR</span>{" "}
+            <span style={{ fontWeight: 700 }}>{f(Math.abs(data.apr), 0)}%</span>
+          </span>
+        </div>
+        <div style={{ marginTop: "12px", fontSize: "10px", color: T.dim }}>
+          PIX-PERP &middot; $100/pt &rarr; <span style={{ color: T.text, fontWeight: 600 }}>${f(Math.abs(data.perDay * 100), 2)}/day per contract</span>
+        </div>
+      </div>
+
+      {/* The Mechanism */}
+      <div style={{ background: T.bg, borderRadius: T.rs, padding: "16px", marginBottom: "20px", border: `1px solid ${T.border}` }}>
+        <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.dim, marginBottom: "10px", textAlign: "center" }}>
+          THE MECHANISM
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+          fontFamily: T.mono, fontSize: "12px", flexWrap: "wrap" }}>
+          <span style={{ color: T.dim }}>TWAP(</span>
+          <span style={{ background: `${T.green}15`, padding: "3px 8px", borderRadius: "4px", color: T.green, fontWeight: 700 }}>PERP {f(data.perp, 2)}</span>
+          <span style={{ color: T.dim }}>)</span>
+          <span style={{ color: T.dim }}>&minus;</span>
+          <span style={{ background: `${T.amber}15`, padding: "3px 8px", borderRadius: "4px", color: T.amber, fontWeight: 700 }}>FV {f(data.fv, 2)}</span>
+          <span style={{ color: T.dim }}>=</span>
+          <span style={{ fontWeight: 800, padding: "3px 8px" }}>{f(data.totalBasis, 1)} pts</span>
+          <span style={{ color: T.dim }}>&divide;</span>
+          <span style={{ color: T.muted }}>{data.nPd} periods</span>
+          <span style={{ color: T.dim }}>=</span>
+          <span style={{ color: T.green, fontWeight: 800, padding: "3px 8px", background: `${T.green}10`, borderRadius: "4px" }}>
+            {f(Math.abs(data.per8h), 3)} pts/8h
+          </span>
+        </div>
+        <div style={{ textAlign: "center", fontSize: "9px", color: T.dim, marginTop: "10px" }}>
+          Measured via 8-hour TWAP &middot; Settled 3&times; per day &middot; {data.nPd} periods over the {tenor}-day tenor
+        </div>
+      </div>
+
+      {/* Flow direction banner + Long/Short */}
+      <div style={{ textAlign: "center", marginBottom: "4px", padding: "10px",
+        background: pos ? `${T.green}08` : `${T.red}08`,
+        borderRadius: `${T.rs} ${T.rs} 0 0`, border: `1px solid ${pos ? T.green : T.red}15` }}>
+        <div style={{ fontFamily: T.mono, fontSize: "11px", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+          <span style={{ color: pos ? T.red : T.green, fontWeight: 700 }}>LONGS</span>
+          <span style={{ color: T.dim }}>&mdash;&mdash;</span>
+          <span style={{ fontWeight: 800, color: pos ? T.green : T.red }}>{f(Math.abs(data.perDay), 3)} pts/day</span>
+          <span style={{ fontSize: "16px", color: pos ? T.green : T.red }}>{pos ? "\u25B6" : "\u25C0"}</span>
+          <span style={{ color: pos ? T.green : T.red, fontWeight: 700 }}>SHORTS</span>
+        </div>
+        <div style={{ fontSize: "9px", color: T.dim, marginTop: "4px", fontFamily: T.mono }}>
+          {pos ? "LONGS PAY \u2192 SHORTS COLLECT" : "SHORTS PAY \u2192 LONGS COLLECT"} &middot; VRP {pos ? "POSITIVE" : "INVERTED"}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2px", marginBottom: "20px" }}>
+        {/* LONG */}
+        <div style={{ background: `${pos ? T.red : T.green}06`, border: `1px solid ${pos ? T.red : T.green}15`,
+          borderRadius: `0 0 0 ${T.r}`, borderTop: "none", padding: "20px", textAlign: "center" }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1.5px", color: pos ? T.red : T.green, marginBottom: "6px" }}>
+            &#9650; LONG PIX-PERP
+          </div>
+          <div style={{ fontSize: "15px", fontWeight: 700, marginBottom: "14px" }}>Buying Protection</div>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1px", color: T.dim, marginBottom: "6px" }}>
+            {pos ? "PAYS FUNDING" : "COLLECTS FUNDING"}
+          </div>
+          <div style={{ fontFamily: T.mono, fontSize: "30px", fontWeight: 800, color: pos ? T.red : T.green }}>
+            {f(Math.abs(data.perDay), 3)}
+          </div>
+          <div style={{ fontSize: "10px", fontFamily: T.mono, color: T.dim }}>pts / day</div>
+          <div style={{ fontFamily: T.mono, fontSize: "12px", fontWeight: 600, marginTop: "6px", color: T.muted }}>
+            ${f(Math.abs(data.perDay * 100), 2)}/day <span style={{ color: T.dim, fontSize: "9px" }}>per contract</span>
+          </div>
+          <div style={{ marginTop: "12px", padding: "8px", background: T.bg, borderRadius: T.rs }}>
+            <div style={{ fontSize: "8px", fontFamily: T.mono, color: T.dim, letterSpacing: "1px" }}>MAX LOSS</div>
+            <div style={{ fontFamily: T.mono, fontSize: "14px", fontWeight: 700, color: T.red }}>{f(data.maxLossLong, 2)} pts</div>
+            <div style={{ fontSize: "9px", color: T.dim }}>${f(data.maxLossLong * 100, 0)} per contract</div>
+          </div>
+        </div>
+        {/* SHORT */}
+        <div style={{ background: `${pos ? T.green : T.red}06`, border: `1px solid ${pos ? T.green : T.red}15`,
+          borderRadius: `0 0 ${T.r} 0`, borderTop: "none", padding: "20px", textAlign: "center" }}>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1.5px", color: pos ? T.green : T.red, marginBottom: "6px" }}>
+            &#9660; SHORT PIX-PERP
+          </div>
+          <div style={{ fontSize: "15px", fontWeight: 700, marginBottom: "14px" }}>Selling Protection</div>
+          <div style={{ fontSize: "8px", fontFamily: T.mono, letterSpacing: "1px", color: T.dim, marginBottom: "6px" }}>
+            {pos ? "COLLECTS FUNDING" : "PAYS FUNDING"}
+          </div>
+          <div style={{ fontFamily: T.mono, fontSize: "30px", fontWeight: 800, color: pos ? T.green : T.red }}>
+            {f(Math.abs(data.perDay), 3)}
+          </div>
+          <div style={{ fontSize: "10px", fontFamily: T.mono, color: T.dim }}>pts / day</div>
+          <div style={{ fontFamily: T.mono, fontSize: "12px", fontWeight: 600, marginTop: "6px", color: T.muted }}>
+            ${f(Math.abs(data.perDay * 100), 2)}/day <span style={{ color: T.dim, fontSize: "9px" }}>per contract</span>
+          </div>
+          <div style={{ marginTop: "12px", padding: "8px", background: T.bg, borderRadius: T.rs }}>
+            <div style={{ fontSize: "8px", fontFamily: T.mono, color: T.dim, letterSpacing: "1px" }}>MAX LOSS</div>
+            <div style={{ fontFamily: T.mono, fontSize: "14px", fontWeight: 700, color: T.red }}>{f(data.maxLossShort, 2)} pts</div>
+            <div style={{ fontSize: "9px", color: T.dim }}>${f(data.maxLossShort * 100, 0)} per contract</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Funding schedule table */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>FUNDING SCHEDULE</Label>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.mono, fontSize: "11px" }}>
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${T.border}` }}>
+              {["", "PER HOUR", "PER 8H", "PER DAY", `OVER ${tenor}D TENOR`, "APR"].map((h, i) => (
+                <th key={i} style={{ padding: "8px", textAlign: i === 0 ? "left" : "right",
+                  fontSize: "8px", color: T.dim, letterSpacing: "1px", fontWeight: 700 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+              <td style={{ padding: "8px", color: T.muted, fontSize: "9px", fontWeight: 600 }}>PROB PTS</td>
+              <td style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>{f(data.perHour, 4)}</td>
+              <td style={{ padding: "8px", textAlign: "right", fontWeight: 600 }}>{f(data.per8h, 3)}</td>
+              <td style={{ padding: "8px", textAlign: "right", fontWeight: 700, color: T.green }}>{f(data.perDay, 3)}</td>
+              <td style={{ padding: "8px", textAlign: "right", fontWeight: 800 }}>{f(data.totalBasis, 1)}</td>
+              <td style={{ padding: "8px", textAlign: "right", fontWeight: 700, color: T.amber }}>{f(Math.abs(data.apr), 0)}%</td>
+            </tr>
+            <tr>
+              <td style={{ padding: "8px", color: T.muted, fontSize: "9px" }}>$ PER CONTRACT</td>
+              <td style={{ padding: "8px", textAlign: "right" }}>${f(Math.abs(data.perHour * 100), 2)}</td>
+              <td style={{ padding: "8px", textAlign: "right" }}>${f(Math.abs(data.per8h * 100), 2)}</td>
+              <td style={{ padding: "8px", textAlign: "right", color: T.green, fontWeight: 600 }}>${f(Math.abs(data.perDay * 100), 2)}</td>
+              <td style={{ padding: "8px", textAlign: "right", fontWeight: 700 }}>${f(Math.abs(data.totalBasis * 100), 0)}</td>
+              <td style={{ padding: "8px", textAlign: "right", color: T.dim }}>&mdash;</td>
+            </tr>
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Interactive Price Explorer: Demand Premium slider + Three-layer bars */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>THREE-LAYER PRICE ARCHITECTURE</Label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "20px" }}>
+          <SliderControl label="VIX LEVEL" value={vol} min={10} max={60} step={1} onChange={setVol} />
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+              <span style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "1.5px", color: T.dim }}>DEMAND PREMIUM (% VS CASH)</span>
+              <span style={{ fontSize: "12px", fontFamily: T.mono, fontWeight: 700,
+                color: demPremPct > 0 ? T.blue : demPremPct < 0 ? T.red : T.muted }}>
+                {demPremPct > 0 ? "+" : ""}{demPremPct}%
+              </span>
+            </div>
+            <input type="range" min={-50} max={30} step={1} value={demPremPct}
+              onChange={e => setDemPremPct(+e.target.value)}
+              style={{ width: "100%", accentColor: demPremPct >= 0 ? T.blue : T.red }} />
+            <div style={{ position: "relative", marginTop: "2px", fontSize: "7px", fontFamily: T.mono, letterSpacing: "0.5px" }}>
+              <span style={{ color: T.red }}>DISCOUNT</span>
+              <span style={{ position: "absolute", left: "62.5%", transform: "translateX(-50%)", color: T.muted }}>0%</span>
+              <span style={{ float: "right", color: T.blue }}>PREMIUM</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bar chart */}
+        <div style={{ marginBottom: "16px" }}>
+          {layers.map((l, i) => (
+            <div key={i} style={{ marginBottom: i < layers.length - 1 ? "12px" : 0 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
+                <span style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "1px", color: l.color, fontWeight: 600 }}>{l.label}</span>
+                <span style={{ fontFamily: T.mono, fontSize: "14px", fontWeight: 800, color: l.color }}>{f(l.value, 2)}</span>
+              </div>
+              <div style={{ position: "relative", height: "24px", background: T.bg, borderRadius: "4px", overflow: "hidden" }}>
+                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0,
+                  width: `${Math.max(2, (l.value / data.maxVal) * 100)}%`,
+                  background: `${l.color}30`, borderRadius: "4px", borderRight: `2px solid ${l.color}` }} />
+              </div>
+              <div style={{ fontSize: "9px", color: T.dim, marginTop: "2px" }}>{l.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Gap annotations */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+          {[
+            { label: "DEMAND PREMIUM", value: data.demandPremium, color: data.demandPremium >= 0 ? T.blue : T.red, desc: "PERP \u2212 Cash" },
+            { label: "STRUCTURAL VRP", value: data.vrpSpread, color: data.vrpSpread >= 0 ? T.green : T.red, desc: "Cash \u2212 Fair Value" },
+            { label: "TOTAL BASIS", value: data.totalBasis, color: data.totalBasis >= 0 ? T.amber : T.red, desc: "PERP \u2212 Fair Value" },
+          ].map(g => (
+            <div key={g.label} style={{ textAlign: "center", padding: "8px", background: T.bg, borderRadius: T.rs }}>
+              <div style={{ fontSize: "7px", fontFamily: T.mono, letterSpacing: "1px", color: T.dim }}>{g.label}</div>
+              <div style={{ fontSize: "16px", fontFamily: T.mono, fontWeight: 800, color: g.color }}>
+                {g.value < 0 ? "\u2212" : ""}{f(Math.abs(g.value), 2)} <span style={{ fontSize: "10px", color: T.dim }}>pts</span>
+              </div>
+              <div style={{ fontSize: "8px", color: T.dim }}>{g.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Dollar context */}
+        <div style={{ textAlign: "center", padding: "10px", background: T.bg, borderRadius: T.rs, fontSize: "10px", color: T.dim }}>
+          CME PIX Futures: <span style={{ color: T.green, fontWeight: 700 }}>$100/pt</span> multiplier &middot;{" "}
+          <span style={{ color: T.text }}>$10 tick (0.1 pt)</span> &middot;{" "}
+          <span style={{ color: T.amber }}>$10,000 max margin</span> (bounded at 100)
+        </div>
+      </Card>
+
+      {/* Key copy */}
+      <div style={{ padding: "16px 20px", borderRadius: T.r,
+        background: `linear-gradient(135deg, ${T.greenG}, transparent)`, borderLeft: `3px solid ${T.green}` }}>
+        <div style={{ fontSize: "13px", color: T.text, lineHeight: 1.7 }}>
+          <strong style={{ color: T.green }}>The funding rate IS the VRP</strong>, flowing directly from protection buyers
+          to protection sellers, every 8 hours. No intermediary. No model ambiguity. The variance risk premium
+          that academia has measured for decades becomes a tradeable, observable, continuously-settled rate.
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// PANEL 6: SHOCK LAB
+// ============================================================================
+const Panel6ShockLab = () => {
+  const [vol, setVol] = useState(18);
+  const [shockPct, setShockPct] = useState(-3);
+  const [showAll, setShowAll] = useState(false);
+
+  const products = showAll ? PERP_ALL_PRODUCTS : PERP_DEFAULT_PRODUCTS;
+  const shockPresets = [-1, -3, -5, -10, 3, 5];
+
+  const data = useMemo(() => {
+    const newVol = shockVIX(vol, shockPct);
+
+    const rows = products.map(p => {
+      const fr = computeFundingRate(vol, p.barrier, p.tenor, p.dir);
+      const shock = computeShockResponse(vol, p.barrier, p.tenor, p.dir, shockPct);
+      const carryShock = computeCarryShockRatio(fr.perDay, shock.pnlShort);
+      return { ...p, ...fr, ...shock, carryShock, currentPerDay: fr.perDay, currentApr: fr.apr };
+    });
+
+    const scatter = rows.map(r => ({
+      label: r.label, carry: r.currentApr, shockPnl: r.pnlShort, carryShock: r.carryShock,
+    }));
+
+    return { rows, scatter, newVol };
+  }, [vol, shockPct, products]);
+
+  // Bounded risk proof: PIX vs VIX
+  const covidVIX = 82.7;
+  const pixAtCovid = pixCash(covidVIX, 10, 30, "DOWN");
+
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "2px", color: T.red, marginBottom: "6px" }}>
+          SHOCK LAB
+        </div>
+        <div style={{ fontFamily: T.display, fontSize: "26px", fontWeight: 700, marginBottom: "8px" }}>
+          What If SPX Moves {shockPct}% Tomorrow?
+        </div>
+        <div style={{ fontSize: "12px", color: T.muted, maxWidth: "700px", margin: "0 auto", lineHeight: 1.6 }}>
+          Every protection position has a cost and a payoff. The Shock Lab shows what happens to your PIX-PERP
+          when SPX moves &mdash; the instant repricing across all contracts, the VIX spike, and the
+          carry/shock tradeoff that defines each product's risk profile.
+          {shockPct > 0 && <span style={{ color: T.amber, fontWeight: 600 }}>
+            {" "}In a rally, crash probability drops &mdash; longs lose, shorts collect.
+          </span>}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div style={{ display: "flex", gap: "16px", marginBottom: "16px", flexWrap: "wrap", alignItems: "flex-end" }}>
+        <SliderControl label="VIX" value={vol} min={10} max={60} step={1} onChange={setVol} />
+        <SliderControl label="SHOCK" value={shockPct} min={-15} max={10} step={1} onChange={setShockPct}
+          color={shockPct < 0 ? T.red : T.green} formatVal={v => `${v > 0 ? "+" : ""}${v}%`} />
+        <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+          {shockPresets.map(s => (
+            <button key={s} onClick={() => setShockPct(s)}
+              style={{ padding: "5px 10px", borderRadius: T.rs, border: `1px solid ${shockPct === s ? (s < 0 ? T.red : T.green) : T.border}`,
+                background: shockPct === s ? (s < 0 ? `${T.red}15` : `${T.green}15`) : "transparent",
+                color: shockPct === s ? (s < 0 ? T.red : T.green) : T.muted,
+                fontFamily: T.mono, fontSize: "10px", cursor: "pointer", fontWeight: 600 }}>
+              {s > 0 ? "+" : ""}{s}%
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setShowAll(!showAll)}
+          style={{ padding: "5px 14px", borderRadius: T.rs, border: `1px solid ${T.border}`,
+            background: showAll ? T.greenD : "transparent", color: showAll ? T.green : T.muted,
+            fontFamily: T.mono, fontSize: "10px", cursor: "pointer", fontWeight: 600 }}>
+          {showAll ? "Show 4" : "All 8"}
+        </button>
+      </div>
+
+      {/* Scenario Banner */}
+      {shockPct !== 0 && (
+        <div style={{ textAlign: "center", padding: "12px", marginBottom: "20px", borderRadius: T.rs,
+          background: shockPct < 0 ? `${T.red}10` : `${T.green}10`,
+          border: `1px solid ${shockPct < 0 ? T.red : T.green}25` }}>
+          <div style={{ fontFamily: T.mono, fontSize: "14px", fontWeight: 700, color: shockPct < 0 ? T.red : T.green }}>
+            SCENARIO: SPX {shockPct > 0 ? "+" : ""}{shockPct}% IN 1 DAY
+          </div>
+          <div style={{ fontSize: "10px", fontFamily: T.mono, color: T.muted, marginTop: "4px" }}>
+            VIX: {vol} &rarr; {f(data.newVol, 0)}
+          </div>
+        </div>
+      )}
+
+      {/* Before/After Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px", marginBottom: "24px" }}>
+        {data.rows.map(r => (
+          <div key={r.label} style={{ background: T.surface, borderRadius: T.r, padding: "16px", border: `1px solid ${T.border}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
+              <div>
+                <div style={{ fontFamily: T.mono, fontSize: "13px", fontWeight: 700 }}>{r.label}</div>
+                <div style={{ fontSize: "10px", color: T.green, fontStyle: "italic" }}>{r.archetype}</div>
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "8px", fontFamily: T.mono, color: T.dim, letterSpacing: "1px" }}>LONG P&L</div>
+                <div style={{ fontFamily: T.mono, fontSize: "18px", fontWeight: 800, color: r.pnlLong >= 0 ? T.green : T.red }}>
+                  {r.pnlLong >= 0 ? "+" : ""}{f(r.pnlLong, 1)}
+                </div>
+                <div style={{ fontSize: "9px", fontFamily: T.mono, color: T.dim }}>
+                  {r.pnlLong >= 0 ? "+" : ""}${f(r.pnlLong * 100, 0)}/contract
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+              <div style={{ background: T.bg, borderRadius: T.rs, padding: "10px", textAlign: "center" }}>
+                <div style={{ fontSize: "7px", fontFamily: T.mono, letterSpacing: "1px", color: T.dim, marginBottom: "4px" }}>CURRENT</div>
+                <div style={{ fontFamily: T.mono }}>
+                  <div style={{ fontSize: "9px", color: T.dim }}>Cash <span style={{ color: T.text, fontWeight: 600 }}>{f(r.oldCash, 2)}</span></div>
+                  <div style={{ fontSize: "9px", color: T.dim }}>FV <span style={{ color: T.amber, fontWeight: 600 }}>{f(r.oldFv, 2)}</span></div>
+                  <div style={{ fontSize: "9px", color: T.dim }}>PERP <span style={{ color: T.green, fontWeight: 600 }}>{f(r.oldPerp, 2)}</span></div>
+                  <div style={{ fontSize: "9px", color: T.dim, marginTop: "4px" }}>Fund/day <span style={{ fontWeight: 600 }}>{f(r.currentPerDay, 3)}</span></div>
+                </div>
+              </div>
+              <div style={{ background: `${shockPct < 0 ? T.red : T.green}06`, borderRadius: T.rs, padding: "10px", textAlign: "center",
+                border: `1px solid ${shockPct < 0 ? T.red : T.green}15` }}>
+                <div style={{ fontSize: "7px", fontFamily: T.mono, letterSpacing: "1px",
+                  color: shockPct < 0 ? T.red : T.green, marginBottom: "4px" }}>AFTER (VIX {f(data.newVol, 0)})</div>
+                <div style={{ fontFamily: T.mono }}>
+                  <div style={{ fontSize: "9px", color: T.dim }}>Cash <span style={{ color: T.text, fontWeight: 600 }}>{f(r.newCash, 2)}</span></div>
+                  <div style={{ fontSize: "9px", color: T.dim }}>FV <span style={{ color: T.amber, fontWeight: 600 }}>{f(r.newFv, 2)}</span></div>
+                  <div style={{ fontSize: "9px", color: T.dim }}>PERP <span style={{ color: T.green, fontWeight: 600 }}>{f(r.newPerp, 2)}</span></div>
+                  <div style={{ fontSize: "9px", color: T.dim, marginTop: "4px" }}>Fund/day <span style={{ fontWeight: 600 }}>{f(r.newFundingPerDay, 3)}</span></div>
+                </div>
+              </div>
+            </div>
+            <div style={{ marginTop: "8px", textAlign: "center", fontSize: "9px", fontFamily: T.mono }}>
+              <span style={{ color: T.dim }}>Carry/Shock:</span>{" "}
+              <span style={{ color: r.carryShock < 20 ? T.green : r.carryShock < 50 ? T.amber : T.red, fontWeight: 700 }}>
+                {r.carryShock < 9999 ? f(r.carryShock, 0) + " days" : "\u221E"}
+              </span>
+              <span style={{ color: T.dim }}> to recover</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tradeoff scatter */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>THE TRADEOFF MAP &mdash; APR (SHORT) vs SHOCK P&amp;L (SHORT)</Label>
+        <ResponsiveContainer width="100%" height={280}>
+          <ScatterChart data={data.scatter} margin={{ top: 25, right: 30, bottom: 20, left: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={T.border} />
+            <XAxis dataKey="carry" name="APR %" type="number" tick={{ fill: T.dim, fontSize: 10, fontFamily: T.mono }}
+              label={{ value: "APR % (short carry)", position: "insideBottom", offset: -10, fill: T.dim, fontSize: 10 }} />
+            <YAxis dataKey="shockPnl" name="Shock P&L" type="number" tick={{ fill: T.dim, fontSize: 10, fontFamily: T.mono }}
+              label={{ value: "Shock P&L (short)", angle: -90, position: "insideLeft", offset: 10, fill: T.dim, fontSize: 10 }} />
+            <Tooltip content={({ payload }) => {
+              if (!payload || !payload.length) return null;
+              const d = payload[0].payload;
+              return (
+                <div style={{ background: T.raised, border: `1px solid ${T.border}`, borderRadius: T.rs, padding: "8px",
+                  fontFamily: T.mono, fontSize: "10px" }}>
+                  <div style={{ fontWeight: 700, marginBottom: "4px" }}>{d.label}</div>
+                  <div>APR: {f(d.carry, 0)}%</div>
+                  <div>Shock P&L: {f(d.shockPnl, 1)} pts (${f(d.shockPnl * 100, 0)})</div>
+                  <div>Recovery: {f(d.carryShock, 0)} days</div>
+                </div>
+              );
+            }} />
+            <Scatter dataKey="shockPnl" fill={T.green}>
+              {data.scatter.map((entry, i) => (
+                <Cell key={i} fill={entry.shockPnl < 0 ? T.green : T.red} r={6} />
+              ))}
+            </Scatter>
+            <Legend content={() => (
+              <div style={{ textAlign: "center", fontSize: "9px", fontFamily: T.mono, color: T.dim, marginTop: "4px" }}>
+                {data.scatter.map((d, i) => (
+                  <span key={i} style={{ marginRight: "12px" }}>
+                    <span style={{ color: d.shockPnl < 0 ? T.green : T.red, fontWeight: 700 }}>{"\u25CF"}</span>{" "}
+                    <span style={{ color: T.muted }}>{d.label}</span>
+                  </span>
+                ))}
+              </div>
+            )} />
+          </ScatterChart>
+        </ResponsiveContainer>
+        <div style={{ textAlign: "center", fontSize: "9px", color: T.dim, marginTop: "4px" }}>
+          Best risk/reward: high APR (right) with low shock loss (top). Green = short gains, Red = short loses.
+        </div>
+      </Card>
+
+      {/* Carry/Shock ratio table */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>CARRY / SHOCK RATIO &mdash; DAYS TO RECOVER (SHORT)</Label>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.mono, fontSize: "11px" }}>
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${T.border}` }}>
+              {["PRODUCT", "DAILY CARRY", "SHOCK P&L (SHORT)", "RECOVERY DAYS", "APR"].map((h, i) => (
+                <th key={i} style={{ padding: "8px 6px", textAlign: i === 0 ? "left" : "right",
+                  fontSize: "8px", color: T.dim, letterSpacing: "1px", fontWeight: 700 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {[...data.rows].sort((a, b) => a.carryShock - b.carryShock).map((r, i) => {
+              const medianCS = data.rows.reduce((s, x) => s + x.carryShock, 0) / data.rows.length;
+              return (
+                <tr key={i} style={{ borderBottom: `1px solid ${T.border}`,
+                  background: r.carryShock < medianCS ? `${T.green}06` : `${T.red}06` }}>
+                  <td style={{ padding: "8px 6px", fontWeight: 600 }}>{r.label}</td>
+                  <td style={{ padding: "8px 6px", textAlign: "right" }}>
+                    <span style={{ color: T.green, fontWeight: 600 }}>{f(r.currentPerDay, 3)}</span>
+                    <div style={{ fontSize: "8px", color: T.dim }}>${f(Math.abs(r.currentPerDay * 100), 2)}/day</div>
+                  </td>
+                  <td style={{ padding: "8px 6px", textAlign: "right" }}>
+                    <span style={{ fontWeight: 700, color: r.pnlShort < 0 ? T.red : T.green }}>
+                      {r.pnlShort >= 0 ? "+" : ""}{f(r.pnlShort, 1)}
+                    </span>
+                    <div style={{ fontSize: "8px", color: T.dim }}>${f(Math.abs(r.pnlShort * 100), 0)}</div>
+                  </td>
+                  <td style={{ padding: "8px 6px", textAlign: "right", fontWeight: 800,
+                    color: r.carryShock < 20 ? T.green : r.carryShock < 50 ? T.amber : T.red }}>
+                    {r.carryShock < 9999 ? f(r.carryShock, 0) + " days" : "\u221E"}
+                  </td>
+                  <td style={{ padding: "8px 6px", textAlign: "right", color: T.amber, fontWeight: 600 }}>{f(r.currentApr, 0)}%</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Bounded risk proof */}
+      <Card>
+        <Label>BOUNDED RISK PROOF &mdash; PIX vs VIX FUTURES</Label>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+          <div style={{ padding: "16px", background: `${T.green}06`, borderRadius: T.rs, border: `1px solid ${T.green}25` }}>
+            <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "1px", color: T.green, marginBottom: "8px", fontWeight: 700 }}>
+              PIX-PERP (BOUNDED 0-100)
+            </div>
+            <div style={{ fontSize: "11px", color: T.muted, lineHeight: 1.6, marginBottom: "8px" }}>
+              At COVID peak VIX {covidVIX}:
+            </div>
+            <div style={{ fontFamily: T.mono, fontSize: "14px", marginBottom: "4px" }}>
+              PIX-DN10-30D = <span style={{ color: T.red, fontWeight: 700 }}>{f(pixAtCovid, 2)}</span>
+            </div>
+            <div style={{ fontFamily: T.mono, fontSize: "14px" }}>
+              Max remaining loss: <span style={{ color: T.green, fontWeight: 700 }}>{f(100 - pixAtCovid, 2)} pts</span>
+              <span style={{ color: T.dim, fontSize: "10px" }}> (${f((100 - pixAtCovid) * 100, 0)})</span>
+            </div>
+            <div style={{ fontSize: "10px", color: T.dim, marginTop: "6px" }}>
+              Worst case is always known: max loss = 100 minus entry price.
+            </div>
+          </div>
+          <div style={{ padding: "16px", background: `${T.red}06`, borderRadius: T.rs, border: `1px solid ${T.red}25` }}>
+            <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "1px", color: T.red, marginBottom: "8px", fontWeight: 700 }}>
+              VIX FUTURES (UNBOUNDED)
+            </div>
+            <div style={{ fontSize: "11px", color: T.muted, lineHeight: 1.6, marginBottom: "8px" }}>
+              At COVID peak VIX {covidVIX}:
+            </div>
+            <div style={{ fontFamily: T.mono, fontSize: "14px", marginBottom: "4px" }}>
+              VIX Front Month = <span style={{ color: T.red, fontWeight: 700 }}>~{f(covidVIX, 0)}</span>
+            </div>
+            <div style={{ fontFamily: T.mono, fontSize: "14px" }}>
+              Max remaining loss: <span style={{ color: T.red, fontWeight: 700 }}>UNBOUNDED</span>
+            </div>
+            <div style={{ fontSize: "10px", color: T.dim, marginTop: "6px" }}>
+              No theoretical cap. Short VIX futures have unlimited risk.
+            </div>
+          </div>
+        </div>
+        <div style={{ padding: "12px 16px", background: `${T.green}08`, borderLeft: `3px solid ${T.green}`, borderRadius: "0 6px 6px 0" }}>
+          <div style={{ fontSize: "11px", color: T.text, lineHeight: 1.6 }}>
+            <strong style={{ color: T.green }}>At COVID peak VIX {covidVIX},</strong> max remaining PIX short loss
+            is bounded at {f(100 - pixAtCovid, 1)} pts (${f((100 - pixAtCovid) * 100, 0)}). VIX futures have
+            no upper bound. PIX makes vol selling institutionally allocable because worst-case is always known.
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+// ============================================================================
+// PANEL 7: FRANCHISE OVERVIEW
+// ============================================================================
+const Panel7Franchise = () => {
+  const stackLayers = [
+    { label: "DATA PRODUCTS", sub: "PIX surface data, VRP analytics, event decomposition feeds", rev: "Subscription + per-query", color: T.blue, size: 60 },
+    { label: "OPTIONS ON PIX FUTURES", sub: "36+ independent chains per asset. Each surface point = an options chain.", rev: "Per-contract exchange fees", color: T.blue, size: 80 },
+    { label: "PIX FUTURES", sub: "100+ products per asset (9 tenors x barriers x directions). Standardized, clearable.", rev: "Per-contract exchange fees", color: T.green, size: 100 },
+    { label: "PIX CASH INDEX", sub: "The probability surface. Published in real-time. Licensed to CME.", rev: "Index licensing fee", color: T.green, size: 100 },
+    { label: "100s CONTRACTS", sub: "Binary Touch/Settle contracts on the 100s exchange. Probability atomic units.", rev: "Trading fees", color: T.green, size: 100 },
+  ];
+
+  const assets = [
+    { name: "SPX", contracts: 100, options: 36, status: "Phase 1" },
+    { name: "BTC", contracts: 100, options: 36, status: "Phase 1" },
+    { name: "Crude", contracts: 80, options: 28, status: "Phase 2" },
+    { name: "Gold", contracts: 80, options: 28, status: "Phase 2" },
+    { name: "Rates", contracts: 60, options: 20, status: "Phase 3" },
+    { name: "Ag", contracts: 60, options: 20, status: "Phase 3" },
+  ];
+
+  const totalFutures = assets.reduce((a, b) => a + b.contracts, 0);
+  const totalChains = assets.reduce((a, b) => a + b.options, 0);
+
+  const vixPrecedent = [
+    { year: "2004", event: "VIX futures launch", vol: "\u2014" },
+    { year: "2006", event: "VIX options launch", vol: "~100K/day" },
+    { year: "2009", event: "VIX ETPs (VXX)", vol: "~300K/day" },
+    { year: "2012", event: "Weekly VIX options", vol: "~600K/day" },
+    { year: "2018", event: "VIX complex peak", vol: "~800K/day" },
+    { year: "2024", event: "VIX 20th anniversary", vol: "~900K/day" },
+  ];
+
+  const multipliers = [
+    { label: "VIX: Products per asset", value: "1 index", color: T.dim },
+    { label: "PIX: Products per asset", value: "100+", color: T.green },
+    { label: "VIX: Options chains", value: "1", color: T.dim },
+    { label: "PIX: Options chains", value: "36+", color: T.blue },
+    { label: "VIX: Cross-asset", value: "SPX only", color: T.dim },
+    { label: "PIX: Cross-asset", value: "6+ assets", color: T.blue },
+  ];
+
+  const arbPhases = [
+    { phase: "LAUNCH", channels: "2", subtitle: "Model-anchored", color: T.green,
+      nodes: [{ label: "100s", angle: -60 }, { label: "VIX/Opts", angle: 60 }] },
+    { phase: "EARLY", channels: "6+", subtitle: "Market-informed", color: T.green, crossLinks: true,
+      nodes: [{ label: "100s", angle: -90 }, { label: "VIX/Opts", angle: -30 }, { label: "PIX Fut", angle: 30 }] },
+    { phase: "MATURITY", channels: "Dozens", subtitle: "Market-determined", color: T.blue, crossLinks: true,
+      nodes: [{ label: "100s", angle: -108 }, { label: "VIX/Opts", angle: -36 }, { label: "PIX Fut", angle: 36 },
+              { label: "PIX Opts", angle: 108 }, { label: "Synth", angle: 180 }] },
+    { phase: "FRANCHISE", channels: "Cross-asset", subtitle: "Funding = VRP", color: T.blue, crossLinks: true,
+      nodes: [{ label: "100s", angle: -120 }, { label: "VIX", angle: -60 }, { label: "SPX Fut", angle: 0 },
+              { label: "BTC Fut", angle: 60 }, { label: "Opts", angle: 120 }, { label: "Synth", angle: 180 }] },
+  ];
+
+  const vrpTerminal = [
+    { asset: "SPX", dn5: "22.1%", dn10: "18.4%", dn90: "16.8%", regime: "Normal", rColor: T.green },
+    { asset: "BTC", dn5: "38.2%", dn10: "31.5%", dn90: "28.1%", regime: "Elevated", rColor: T.amber },
+    { asset: "ETH", dn5: "41.6%", dn10: "34.2%", dn90: "30.5%", regime: "Elevated", rColor: T.amber },
+    { asset: "Crude", dn5: "19.8%", dn10: "15.1%", dn90: "13.4%", regime: "Calm", rColor: T.green },
+    { asset: "Gold", dn5: "12.4%", dn10: "9.8%", dn90: "8.6%", regime: "Calm", rColor: T.green },
+    { asset: "Rates", dn5: "8.2%", dn10: "6.1%", dn90: "5.3%", regime: "Normal", rColor: T.green },
+    { asset: "Corn", dn5: "24.6%", dn10: "19.2%", dn90: "17.1%", regime: "Seasonal", rColor: T.amber },
+  ];
+
+  return (
+    <div style={{ animation: "fadeIn 0.4s ease-out" }}>
+      {/* Header */}
+      <div style={{ textAlign: "center", marginBottom: "28px" }}>
+        <div style={{ fontSize: "9px", fontFamily: T.mono, letterSpacing: "2px", color: T.blue, marginBottom: "6px" }}>
+          FRANCHISE ECONOMICS
+        </div>
+        <div style={{ fontFamily: T.display, fontSize: "26px", fontWeight: 700, marginBottom: "8px" }}>
+          The VIX Playbook, Multiplied
+        </div>
+        <div style={{ fontSize: "12px", color: T.muted, maxWidth: "700px", margin: "0 auto", lineHeight: 1.7 }}>
+          VIX built a multi-billion dollar franchise from a single index on a single asset.
+          PIX starts with 100+ products per asset across 6+ asset classes.
+          The multiplier is structural, not aspirational.
+        </div>
+      </div>
+
+      {/* Product Stack Tower */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>PRODUCT STACK &mdash; COMPOUNDING ECONOMICS</Label>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "16px" }}>
+          {stackLayers.map((l, i) => (
+            <div key={i} style={{ width: `${l.size}%`, padding: "12px 18px",
+              background: `${l.color}08`, border: `1px solid ${l.color}30`, borderRadius: T.rs }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: l.color, fontFamily: T.mono }}>{l.label}</div>
+                  <div style={{ fontSize: "10px", color: T.muted, marginTop: "2px" }}>{l.sub}</div>
+                </div>
+                <div style={{ fontSize: "10px", color: T.dim, textAlign: "right" }}>{l.rev}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: "10px", color: T.dim, lineHeight: 1.6 }}>
+          Each layer multiplies the revenue opportunity. The cash index feeds futures. Futures feed options.
+          Options feed data products. Every asset class added multiplies the entire stack.
+        </div>
+      </Card>
+
+      {/* Cross-asset expansion table */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>CROSS-ASSET EXPANSION</Label>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.mono, fontSize: "11px" }}>
+          <thead>
+            <tr style={{ borderBottom: `2px solid ${T.border}` }}>
+              {["ASSET", "FUTURES", "OPTIONS CHAINS", "PHASE"].map(h => (
+                <th key={h} style={{ padding: "8px 8px", textAlign: h === "ASSET" || h === "PHASE" ? "left" : "center",
+                  color: T.dim, fontSize: "9px", fontWeight: 700, letterSpacing: "0.5px" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {assets.map(a => (
+              <tr key={a.name} style={{ borderBottom: `1px solid ${T.border}` }}>
+                <td style={{ padding: "8px 8px", color: T.text, fontWeight: 600 }}>{a.name}</td>
+                <td style={{ padding: "8px 8px", textAlign: "center", color: T.green }}>{a.contracts}+</td>
+                <td style={{ padding: "8px 8px", textAlign: "center", color: T.blue }}>{a.options}+</td>
+                <td style={{ padding: "8px 8px" }}>
+                  <span style={{ fontSize: "9px", padding: "2px 8px", borderRadius: "3px",
+                    background: a.status === "Phase 1" ? `${T.green}10` : `${T.blue}10`,
+                    color: a.status === "Phase 1" ? T.green : T.blue }}>{a.status}</span>
+                </td>
+              </tr>
+            ))}
+            <tr style={{ borderTop: `2px solid ${T.blue}40` }}>
+              <td style={{ padding: "8px", color: T.blue, fontWeight: 700 }}>TOTAL</td>
+              <td style={{ padding: "8px", textAlign: "center", color: T.blue, fontWeight: 700 }}>{totalFutures}+</td>
+              <td style={{ padding: "8px", textAlign: "center", color: T.blue, fontWeight: 700 }}>{totalChains}+</td>
+              <td />
+            </tr>
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Arbitrage Web Evolution */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>THE ARBITRAGE WEB &mdash; EVERY LAYER TIGHTENS THE FUNDING RATE</Label>
+        <div style={{ fontSize: "11px", color: T.muted, lineHeight: 1.6, marginBottom: "16px" }}>
+          At launch, two arbitrage channels anchor PIX-PERP funding. As each layer of the derivative stack
+          comes online, new no-arbitrage constraints are added. At full maturity, dozens of simultaneous
+          convergence channels constrain the funding rate &mdash; it stops being a model estimate and becomes
+          the market-determined VRP.
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "10px", marginBottom: "16px" }}>
+          {arbPhases.map(p => {
+            const cx = 60, cy = 55, r = 40;
+            const nodePositions = p.nodes.map(n => {
+              const rad = (n.angle * Math.PI) / 180;
+              return { ...n, x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+            });
+            return (
+              <div key={p.phase} style={{ padding: "14px", background: T.raised, border: `1px solid ${T.border}`, borderRadius: T.rs, textAlign: "center" }}>
+                <div style={{ fontSize: "9px", fontFamily: T.mono, color: p.color, letterSpacing: "1px", marginBottom: "8px", fontWeight: 700 }}>
+                  {p.phase}
+                </div>
+                <svg width="120" height="110" viewBox="0 0 120 110" style={{ display: "block", margin: "0 auto" }}>
+                  {nodePositions.map((n, i) => (
+                    <line key={`c-${i}`} x1={cx} y1={cy} x2={n.x} y2={n.y} stroke={p.color} strokeWidth="1" strokeOpacity="0.4" />
+                  ))}
+                  {p.crossLinks && nodePositions.map((n, i) => {
+                    const next = nodePositions[(i + 1) % nodePositions.length];
+                    return <line key={`x-${i}`} x1={n.x} y1={n.y} x2={next.x} y2={next.y} stroke={p.color} strokeWidth="0.7" strokeOpacity="0.25" />;
+                  })}
+                  {p.crossLinks && nodePositions.length >= 5 && nodePositions.map((n, i) => {
+                    const skip = nodePositions[(i + 2) % nodePositions.length];
+                    return <line key={`xx-${i}`} x1={n.x} y1={n.y} x2={skip.x} y2={skip.y} stroke={p.color} strokeWidth="0.5" strokeOpacity="0.15" />;
+                  })}
+                  {nodePositions.map((n, i) => (
+                    <g key={`n-${i}`}>
+                      <circle cx={n.x} cy={n.y} r="3" fill={p.color} fillOpacity="0.7" />
+                      <text x={n.x} y={n.y + (n.y > cy ? 12 : -6)} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="6" fontFamily="'JetBrains Mono',monospace">{n.label}</text>
+                    </g>
+                  ))}
+                  <circle cx={cx} cy={cy} r="5" fill={T.green} />
+                  <text x={cx} y={cy + 3} textAnchor="middle" fill="#000" fontSize="5" fontWeight="700" fontFamily="'JetBrains Mono',monospace">PERP</text>
+                </svg>
+                <div style={{ fontSize: "18px", fontWeight: 800, fontFamily: T.mono, color: p.color, marginTop: "4px" }}>{p.channels}</div>
+                <div style={{ fontSize: "9px", color: T.dim, marginTop: "2px" }}>{p.subtitle}</div>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* VIX Precedent Timeline */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>Cboe VIX FRANCHISE TRAJECTORY &mdash; 20 YEARS</Label>
+        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "16px" }}>
+          {vixPrecedent.map(v => (
+            <div key={v.year} style={{ padding: "10px 14px", background: T.raised, border: `1px solid ${T.border}`,
+              borderRadius: T.rs, flex: "1 1 130px", minWidth: "120px" }}>
+              <div style={{ fontSize: "14px", fontWeight: 700, fontFamily: T.mono, color: T.muted }}>{v.year}</div>
+              <div style={{ fontSize: "10px", color: T.text, marginTop: "2px" }}>{v.event}</div>
+              <div style={{ fontSize: "10px", color: T.dim, fontFamily: T.mono, marginTop: "2px" }}>{v.vol}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* PIX Multiplier Comparison */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>THE PIX MULTIPLIER &mdash; VIX &times; 100</Label>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "6px", marginBottom: "16px" }}>
+          {multipliers.map(m => (
+            <div key={m.label} style={{ padding: "10px 12px",
+              background: m.color === T.dim ? T.raised : `${m.color}06`,
+              border: `1px solid ${m.color === T.dim ? T.border : `${m.color}25`}`, borderRadius: T.rs }}>
+              <div style={{ fontSize: "9px", color: T.dim, fontFamily: T.mono }}>{m.label}</div>
+              <div style={{ fontSize: "18px", fontWeight: 700, fontFamily: T.mono,
+                color: m.color === T.dim ? T.muted : m.color }}>{m.value}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* TAM Expansion Bars */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>TAM EXPANSION &mdash; EACH ASSET MULTIPLIES THE GRID</Label>
+        <div style={{ display: "flex", gap: "3px", height: "80px", alignItems: "flex-end", marginBottom: "16px" }}>
+          {[
+            { asset: "SPX", mult: 1, phase: 1 }, { asset: "+BTC", mult: 2, phase: 1 },
+            { asset: "+Crude", mult: 3, phase: 2 }, { asset: "+Gold", mult: 4, phase: 2 },
+            { asset: "+Rates", mult: 5, phase: 3 }, { asset: "+Ag", mult: 6, phase: 3 },
+          ].map(a => (
+            <div key={a.asset} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "2px" }}>
+              <div style={{ width: "100%", height: `${(a.mult / 6) * 100}%`,
+                background: a.phase === 1 ? T.green : a.phase === 2 ? T.blue : `${T.blue}80`,
+                borderRadius: "3px 3px 0 0", minHeight: "10px" }} />
+              <div style={{ fontSize: "8px", fontFamily: T.mono, color: T.dim }}>{a.asset}</div>
+              <div style={{ fontSize: "9px", fontFamily: T.mono, color: T.muted }}>{a.mult * 100}+</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* VRP Surface Terminal */}
+      <Card style={{ marginBottom: "20px" }}>
+        <Label>PIX VRP SURFACE &mdash; LIVE FUNDING RATES (ANNUALIZED)</Label>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: T.mono, fontSize: "11px" }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+              {["ASSET", "DN5-30D", "DN10-30D", "DN5-90D", "REGIME"].map(h => (
+                <th key={h} style={{ padding: "6px 8px", textAlign: h === "ASSET" ? "left" : "center",
+                  color: T.dim, fontSize: "9px", fontWeight: 600 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {vrpTerminal.map(row => (
+              <tr key={row.asset} style={{ borderBottom: `1px solid ${T.border}` }}>
+                <td style={{ padding: "7px 8px", color: T.text, fontWeight: 600 }}>{row.asset}</td>
+                <td style={{ padding: "7px 8px", textAlign: "center", color: T.green }}>{row.dn5}</td>
+                <td style={{ padding: "7px 8px", textAlign: "center", color: T.green }}>{row.dn10}</td>
+                <td style={{ padding: "7px 8px", textAlign: "center", color: T.green }}>{row.dn90}</td>
+                <td style={{ padding: "7px 8px", textAlign: "center" }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: "5px" }}>
+                    <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: row.rColor, display: "inline-block" }} />
+                    <span style={{ color: T.muted, fontSize: "10px" }}>{row.regime}</span>
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Revenue Stream Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "12px", marginBottom: "20px" }}>
+        {[
+          { title: "INDEX LICENSING", desc: "Per-contract fee on every PIX futures and options trade at CME", color: T.green },
+          { title: "DATA SUBSCRIPTIONS", desc: "Real-time VRP surface, event decomposition, cross-asset feeds", color: T.blue },
+          { title: "BENCHMARK ADOPTION", desc: "Risk systems, academic research, Bloomberg terminal integration", color: T.amber },
+        ].map(c => (
+          <div key={c.title} style={{ padding: "14px", background: T.raised, border: `1px solid ${T.border}`, borderRadius: T.rs }}>
+            <div style={{ fontSize: "9px", fontFamily: T.mono, color: c.color, letterSpacing: "1px", marginBottom: "6px", fontWeight: 700 }}>
+              {c.title}
+            </div>
+            <div style={{ fontSize: "10px", color: T.dim, lineHeight: 1.5 }}>{c.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Key copy */}
+      <div style={{ padding: "16px 20px", borderRadius: T.r,
+        background: `linear-gradient(135deg, ${T.blue}08, transparent)`, borderLeft: `3px solid ${T.blue}` }}>
+        <div style={{ fontSize: "13px", color: T.text, lineHeight: 1.7 }}>
+          <strong style={{ color: T.blue }}>VIX is one number times one asset.</strong>{" "}
+          PIX is 100+ products times every asset with listed options. Each asset added multiplies
+          the entire product stack &mdash; futures, options, data feeds, index licensing.
+          The franchise economics compound at every layer. This is the VIX playbook, multiplied.
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================================
+// APP SHELL
+// ============================================================================
+const App = () => {
+  const [activeTab, setActiveTab] = useState(0);
+
+  const tabs = [
+    { label: "PIX Explainer", id: "explainer" },
+    { label: "Protection Menu", id: "protection" },
+    { label: "Yield Menu", id: "yield" },
+    { label: "VRP Surface", id: "vrp" },
+    { label: "Event Intelligence", id: "events" },
+    { label: "Funding Mechanism", id: "funding" },
+    { label: "Shock Lab", id: "shock" },
+    { label: "Franchise", id: "franchise" },
+  ];
+
+  const panels = [Panel1Explainer, Panel2ProtectionMenu, Panel3YieldMenu, Panel3VRPSurface, Panel4Events, Panel5Funding, Panel6ShockLab, Panel7Franchise];
+  const ActivePanel = panels[activeTab];
+
+  return (
+    <div style={{ minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }}>
+      {/* Header */}
+      <div style={{
+        padding: "12px 24px",
+        borderBottom: `1px solid ${T.border}`,
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        background: T.surface,
+        position: "sticky", top: 0, zIndex: 100,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <img src={LOGO_SRC} alt="100s" style={{ height: "28px" }} />
+          <span style={{ fontFamily: T.display, fontSize: "18px", fontWeight: 700 }}>
+            PIX <span style={{ color: T.dim, fontWeight: 400, fontSize: "14px" }}>The Probability Index</span>
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: "2px" }}>
+          {tabs.map((tab, i) => (
+            <button key={tab.id} onClick={() => setActiveTab(i)}
+              style={{
+                padding: "8px 14px", borderRadius: "6px", border: "none",
+                background: activeTab === i ? T.greenD : "transparent",
+                color: activeTab === i ? T.green : T.muted,
+                fontFamily: T.mono, fontSize: "11px", fontWeight: 600,
+                cursor: "pointer", letterSpacing: "0.3px",
+                transition: "all 0.2s",
+              }}>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px" }}>
+        <ActivePanel />
+      </div>
+
+      {/* Footer */}
+      <div style={{
+        padding: "16px 24px", borderTop: `1px solid ${T.border}`,
+        textAlign: "center", fontFamily: T.mono, fontSize: "10px", color: T.dim,
+        letterSpacing: "1px",
+      }}>
+        100s &middot; PIX Probability Index &middot; Confidential &mdash; Shared Under NDA
+      </div>
+    </div>
+  );
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+
+</script>
+</body>
+</html>
