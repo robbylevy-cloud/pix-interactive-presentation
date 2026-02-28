@@ -579,7 +579,7 @@ const Panel1Explainer = () => {
 
         {/* Controls Row */}
         <div style={{ display: "flex", gap: "16px", marginBottom: "20px", flexWrap: "wrap", alignItems: "flex-end" }}>
-          <SliderControl label="VIX" value={vix} min={10} max={80} step={0.5} onChange={setVix} />
+          <SliderControl label="VIX" value={vix} min={10} max={80} step={1} onChange={setVix} />
           <div style={{ display: "flex", gap: "4px" }}>
             <Pill active={dir === "DOWN"} onClick={() => setDir("DOWN")} color={T.red}>DN</Pill>
             <Pill active={dir === "UP"} onClick={() => setDir("UP")} color={T.green}>UP</Pill>
