@@ -645,12 +645,12 @@ const Panel1Explainer = () => {
                 position: "absolute", left: `${cr.pix}%`, top: 0, bottom: 0,
                 width: "1px", background: `${cr.color}40`,
               }}>
-                <div style={{
+                {window.innerWidth >= 768 && <div style={{
                   position: "absolute", bottom: "-18px", left: "50%", transform: "translateX(-50%)",
                   fontSize: "7px", fontFamily: T.mono, color: `${cr.color}90`, whiteSpace: "nowrap",
                 }}>
                   {cr.label} {cr.pix}
-                </div>
+                </div>}
               </div>
             ))}
           </div>
