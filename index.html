@@ -569,8 +569,7 @@ const Panel1Explainer = () => {
           What is PIX?
         </div>
         <div style={{ fontSize: "15px", color: T.muted, maxWidth: "700px", margin: "0 auto", lineHeight: 1.7 }}>
-          PIX reads the same vol surface your market makers price every day and outputs probability.
-          One number. No translation needed.
+          PIX turns market uncertainty into a single number anyone can read: the probability that the S&P 500 moves a specific amount in a specific timeframe. No implied volatility. No greeks. No conversion tables. Just a simple probability.
         </div>
       </div>
 
@@ -759,11 +758,11 @@ const Panel1Explainer = () => {
               <div style={{
                 fontSize: "11px", fontFamily: T.mono, letterSpacing: "1.5px",
                 color: T.dim, marginBottom: "10px", fontWeight: 600,
-              }}>SPX DRAWDOWN FROM 6,850</div>
+              }}>SPX DRAWDOWN FROM 6,900</div>
               <div style={{ position: "relative", height: "28px", background: "rgba(255,255,255,0.04)", borderRadius: "4px", overflow: "hidden" }}>
                 <div style={{
                   position: "absolute", left: 0, top: 0, bottom: 0,
-                  width: `${((6850 - cs.spx) / 6850) * 100 * 3.5}%`,
+                  width: `${((6900 - cs.spx) / 6900) * 100 * 3.5}%`,
                   background: `linear-gradient(90deg, ${cs.color}40, ${cs.color}20)`,
                   borderRadius: "4px", transition: "width 0.5s ease",
                 }} />
@@ -771,7 +770,7 @@ const Panel1Explainer = () => {
                   position: "absolute", left: "8px", top: "50%", transform: "translateY(-50%)",
                   fontSize: "14px", fontFamily: T.mono, fontWeight: 700, color: T.text, zIndex: 1,
                 }}>
-                  {cs.spx === 6850 ? "\u2014" : `\u2212${(((6850 - cs.spx) / 6850) * 100).toFixed(0)}%`}
+                  {cs.spx === 6900 ? "\u2014" : `\u2212${(((6900 - cs.spx) / 6900) * 100).toFixed(0)}%`}
                 </div>
               </div>
             </div>
