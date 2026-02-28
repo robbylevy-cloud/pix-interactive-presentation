@@ -2662,6 +2662,25 @@ const Panel7Franchise = () => {
 // ============================================================================
 const App = () => {
   const [activeTab, setActiveTab] = useState(0);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const tabScrollRef = useRef(null);
+  const tabRefs = useRef([]);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Auto-scroll active tab into view on mobile
+  useEffect(() => {
+    if (isMobile && tabRefs.current[activeTab] && tabScrollRef.current) {
+      const btn = tabRefs.current[activeTab];
+      const container = tabScrollRef.current;
+      const scrollLeft = btn.offsetLeft - container.offsetWidth / 2 + btn.offsetWidth / 2;
+      container.scrollTo({ left: scrollLeft, behavior: "smooth" });
+    }
+  }, [activeTab, isMobile]);
 
   const tabs = [
     { label: "PIX Explainer", id: "explainer" },
@@ -2681,37 +2700,81 @@ const App = () => {
     <div style={{ minHeight: "100vh", background: T.bg, color: T.text, fontFamily: T.font }}>
       {/* Header */}
       <div style={{
-        padding: "12px 24px",
         borderBottom: `1px solid ${T.border}`,
-        display: "flex", alignItems: "center", justifyContent: "space-between",
         background: T.surface,
         position: "sticky", top: 0, zIndex: 100,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <img src={LOGO_SRC} alt="100s" style={{ height: "28px" }} />
-          <span style={{ fontFamily: T.display, fontSize: "18px", fontWeight: 700 }}>
-            PIX <span style={{ color: T.dim, fontWeight: 400, fontSize: "14px" }}>The Probability Index</span>
-          </span>
+        {/* Logo row */}
+        <div style={{
+          padding: isMobile ? "10px 16px" : "12px 24px",
+          display: "flex", alignItems: "center",
+          justifyContent: isMobile ? "center" : "space-between",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <img src={LOGO_SRC} alt="100s" style={{ height: "28px" }} />
+            <span style={{ fontFamily: T.display, fontSize: "18px", fontWeight: 700 }}>
+              PIX <span style={{ color: T.dim, fontWeight: 400, fontSize: "14px" }}>The Probability Index</span>
+            </span>
+          </div>
+          {!isMobile && (
+            <div style={{ display: "flex", gap: "2px" }}>
+              {tabs.map((tab, i) => (
+                <button key={tab.id} onClick={() => setActiveTab(i)}
+                  style={{
+                    padding: "8px 14px", borderRadius: "6px", border: "none",
+                    background: activeTab === i ? T.greenD : "transparent",
+                    color: activeTab === i ? T.green : T.muted,
+                    fontFamily: T.mono, fontSize: "11px", fontWeight: 600,
+                    cursor: "pointer", letterSpacing: "0.3px",
+                    transition: "all 0.2s",
+                  }}>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <div style={{ display: "flex", gap: "2px" }}>
-          {tabs.map((tab, i) => (
-            <button key={tab.id} onClick={() => setActiveTab(i)}
-              style={{
-                padding: "8px 14px", borderRadius: "6px", border: "none",
-                background: activeTab === i ? T.greenD : "transparent",
-                color: activeTab === i ? T.green : T.muted,
-                fontFamily: T.mono, fontSize: "11px", fontWeight: 600,
-                cursor: "pointer", letterSpacing: "0.3px",
-                transition: "all 0.2s",
-              }}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Mobile tab scroll strip */}
+        {isMobile && (
+          <div style={{ position: "relative" }}>
+            <style dangerouslySetInnerHTML={{ __html: `
+              .pix-tab-scroll::-webkit-scrollbar { display: none; }
+            `}} />
+            <div ref={tabScrollRef} className="pix-tab-scroll" style={{
+              display: "flex", gap: "4px",
+              overflowX: "auto", WebkitOverflowScrolling: "touch",
+              padding: "0 16px 10px 16px",
+              scrollbarWidth: "none", msOverflowStyle: "none",
+            }}>
+              {tabs.map((tab, i) => (
+                <button key={tab.id}
+                  ref={el => tabRefs.current[i] = el}
+                  onClick={() => setActiveTab(i)}
+                  style={{
+                    padding: "6px 12px", borderRadius: "6px", border: "none",
+                    background: activeTab === i ? T.greenD : "rgba(255,255,255,0.04)",
+                    color: activeTab === i ? T.green : T.muted,
+                    fontFamily: T.mono, fontSize: "11px", fontWeight: 600,
+                    cursor: "pointer", letterSpacing: "0.3px",
+                    transition: "all 0.2s",
+                    whiteSpace: "nowrap", flexShrink: 0,
+                  }}>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {/* Right fade hint */}
+            <div style={{
+              position: "absolute", right: 0, top: 0, bottom: 0, width: "32px",
+              background: `linear-gradient(90deg, transparent, ${T.surface})`,
+              pointerEvents: "none",
+            }} />
+          </div>
+        )}
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px" }}>
+      <div style={{ maxWidth: "1200px", margin: "0 auto", padding: isMobile ? "16px" : "24px" }}>
         <ActivePanel />
       </div>
 
